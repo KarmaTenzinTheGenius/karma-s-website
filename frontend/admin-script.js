@@ -1,5 +1,5 @@
 // ========== API CONFIGURATION ==========
-const API_URL = 'https://YOUR-RENDER-BACKEND-URL.onrender.com/api';
+const API_URL = 'https://karma-s-website-1.onrender.com/api';
 
 // ========== ADMIN DATA ==========
 let allProducts = [];

@@ -16,7 +16,7 @@
 
 // ========== API CONFIGURATION ==========
 // Production backend deployed on Render
-const API_URL = 'https://drukcraft-backend.onrender.com/api';
+const API_URL = 'https://karma-s-website-1.onrender.com/api';
 
 // ========== PRODUCT DATABASE & CART VARIABLES ==========
 let products = [];

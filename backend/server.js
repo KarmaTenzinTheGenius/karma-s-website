@@ -270,6 +270,64 @@ app.get('/api/reviews/:productId', (req, res) => {
   });
 });
 
+app.get('/api/top-rated', (req, res) => {
+  const limit = parseInt(req.query.limit) || 6;
+  const topRated = products.map(product => {
+    const productReviews = reviews.filter(r => r.productId === product.id);
+    const rating = productReviews.length
+      ? productReviews.reduce((sum, review) => sum + review.rating, 0) / productReviews.length
+      : 0;
+
+    return {
+      ...product,
+      rating: Number(rating.toFixed(1)),
+      reviewCount: productReviews.length
+    };
+  })
+    .filter(product => product.reviewCount > 0)
+    .sort((first, second) => second.rating - first.rating)
+    .slice(0, limit);
+
+  res.json({ success: true, count: topRated.length, data: topRated });
+});
+
+app.get('/api/discounts', (req, res) => {
+  const limit = parseInt(req.query.limit) || 6;
+  const discounted = products
+    .filter(product => product.discount > 0)
+    .sort((first, second) => second.discount - first.discount)
+    .slice(0, limit)
+    .map(product => ({
+      ...product,
+      originalPrice: product.price,
+      discountedPrice: (product.price * (1 - product.discount / 100)).toFixed(2),
+      savings: (product.price * product.discount / 100).toFixed(2)
+    }));
+
+  res.json({ success: true, count: discounted.length, data: discounted });
+});
+
+app.get('/api/suggestions', (req, res) => {
+  const limit = parseInt(req.query.limit) || 8;
+  const suggestions = products.map(product => {
+    const productReviews = reviews.filter(review => review.productId === product.id);
+    const rating = productReviews.length
+      ? productReviews.reduce((sum, review) => sum + review.rating, 0) / productReviews.length
+      : 0;
+
+    return {
+      ...product,
+      rating: Number(rating.toFixed(1)),
+      reviewCount: productReviews.length,
+      score: rating * 0.7 + productReviews.length * 0.3
+    };
+  })
+    .sort((first, second) => second.score - first.score)
+    .slice(0, limit);
+
+  res.json({ success: true, count: suggestions.length, data: suggestions });
+});
+
 // ================= HEALTH CHECK =================
 
 app.get('/api/health', (req, res) => {

@@ -1,5 +1,5 @@
 // ========== API CONFIGURATION ==========
-const API_URL = 'http://localhost:5000/api';
+const API_URL = 'https://karma-s-website-1.onrender.com/api';
 
 // ========== ADMIN DATA ==========
 let allProducts = [];

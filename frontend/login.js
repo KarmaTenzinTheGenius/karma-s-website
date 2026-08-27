@@ -2,7 +2,7 @@ const form = document.getElementById('loginForm');
 const message = document.getElementById('message');
 
 // ========== DEPLOYED BACKEND API ==========
-const API_URL = 'https://YOUR-ACTUAL-RENDER-URL.onrender.com/api';
+const API_URL = 'https://karma-s-website-1.onrender.com/api';
 
 form.addEventListener('submit', async (e) => {
   e.preventDefault(); // Stop page reload
