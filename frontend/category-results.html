@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<!--
+  ========================================================
+  CATEGORY RESULTS PAGE
+  ========================================================
+  
+  This page displays products filtered by a specific category.
+  When a customer clicks on a category (Electronics, Clothing, etc.),
+  they are taken to this page showing only products from that category.
+  
+  Similar to search-results.html but filters by category instead of search keywords.
+  
+  ========================================================
+-->
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Category Products - Karma Lokdruel Tshongley</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <!-- Navigation Header -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <h1 class="logo">Karma Lokdruel Tshongley</h1>
+            
+            <!-- Search Bar -->
+            <form action="search-results.html" method="GET" class="search-bar">
+                <input type="text" name="query" placeholder="Search for products...">
+                <button type="submit">Search</button>
+            </form>
+            
+            <div class="nav-buttons">
+                <button class="admin-link-btn" onclick="window.location.href='admin.html'" title="Admin Panel">🔐</button>
+                <button class="cart-button" onclick="openCart()">
+                    🛒 Cart <span class="cart-count" id="cartCount">0</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Layout -->
+    <div class="main-container">
+        <!-- Right Content Area -->
+        <div class="content-area">
+            <!-- Back to Home Button -->
+            <div class="back-to-home">
+                <a href="index.html" class="back-btn">← Back to Home</a>
+            </div>
+
+            <!-- Category Results Header -->
+            <div class="category-results-header">
+                <h2><span id="categoryIcon"></span> <span id="categoryName"></span></h2>
+                <p id="resultCount">Found 0 products</p>
+            </div>
+
+            <!-- Products Container -->
+            <div class="product-container">
+                <!-- Products will be loaded here by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Cart Modal -->
+    <div id="cartModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeCart()">&times;</span>
+            <h2>🛒 Shopping Cart</h2>
+            <div id="cartItems" class="cart-items-list"></div>
+            <div class="cart-summary">
+                <h3>Total: $<span id="cartTotal">0.00</span></h3>
+                <button class="checkout-btn" onclick="checkout()">✓ Proceed to Checkout</button>
+                <button class="clear-cart-btn" onclick="clearCart()">🗑️ Clear Cart</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Review Modal -->
+    <div id="reviewModal" class="modal">
+        <div class="modal-content review-modal">
+            <span class="close" onclick="closeReviewModal()">&times;</span>
+            <h2 id="reviewProductName">Product Reviews</h2>
+            
+            <!-- Reviews Display -->
+            <div id="reviewsContainer" class="reviews-container"></div>
+            
+            <!-- Add Review Form -->
+            <div class="add-review-section">
+                <h3>Leave a Review</h3>
+                <form id="reviewForm" onsubmit="submitReview(event)">
+                    <input type="hidden" id="reviewProductId" value="">
+                    
+                    <div class="form-group">
+                        <label>Your Name:</label>
+                        <input type="text" id="reviewCustomerName" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Rating:</label>
+                        <select id="reviewRating" required>
+                            <option value="">-- Select Rating --</option>
+                            <option value="5">⭐⭐⭐⭐⭐ (5 - Excellent)</option>
+                            <option value="4">⭐⭐⭐⭐ (4 - Good)</option>
+                            <option value="3">⭐⭐⭐ (3 - Average)</option>
+                            <option value="2">⭐⭐ (2 - Fair)</option>
+                            <option value="1">⭐ (1 - Poor)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Review Title:</label>
+                        <input type="text" id="reviewTitle" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Comment:</label>
+                        <textarea id="reviewComment" rows="4"></textarea>
+                    </div>
+                    
+                    <button type="submit" class="submit-review-btn">Submit Review</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2024 Karma Lokdruel Tshongley. All rights reserved.</p>
+        <p>Connected to Backend API at http://localhost:5000</p>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="script.js"></script>
+    <script src="category-results.js"></script>
+</body>
+
+</html>
