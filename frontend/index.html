@@ -3,19 +3,6 @@
   ========================================================
   KARMA LOKDRUEL TSHONGLEY - E-COMMERCE STORE
   ========================================================
-  
-  OVERVIEW:
-  This is the main home page of the e-commerce store. It displays products,
-  allows customers to search, filter by categories, and manage their shopping cart.
-  
-  KEY SECTIONS:
-  1. Navigation Bar - Logo, Search bar, Admin link, Cart button
-  2. Category Sidebar - Horizontal category filters (Electronics, Clothing, etc.)
-  3. Product Grid - Displays all products with prices, ratings, and add to cart buttons
-  4. Hot Discounts - Special section showing discounted products
-  5. Modals - Pop-up windows for cart, reviews, and product details
-  
-  ========================================================
 -->
 
 <html lang="en">
@@ -27,185 +14,329 @@
 </head>
 
 <body>
-    <!-- 
-      ========== NAVIGATION BAR ==========
-      The top bar that appears on every page. Contains:
-      - Store logo (clickable to go home)
-      - Search bar (users can search for products)
-      - Admin panel button (for store administrators)
-      - Shopping cart button (shows number of items in cart)
-    -->
+
+    <!-- ========== NAVIGATION BAR ========== -->
     <nav class="navbar">
         <div class="nav-container">
             <h1 class="logo">Karma Lokdruel Tshongley</h1>
-            
-            <!-- 
-              SEARCH BAR
-              - Users type a product name or keyword
-              - Clicking submit takes them to search-results.html with their query
-              - This performs a full-page search instead of filtering on the same page
-            -->
+
             <form action="search-results.html" method="GET" class="search-bar">
-                <input type="text" name="query" placeholder="Search for products...">
+                <input
+                    type="text"
+                    name="query"
+                    placeholder="Search for products..."
+                >
                 <button type="submit">Search</button>
             </form>
-            
+
             <div class="nav-buttons">
-                <!-- Admin button - takes to admin panel for store management -->
-                <button class="admin-link-btn" onclick="window.location.href='admin.html'" title="Admin Panel">🔐</button>
-                <!-- Cart button - shows number of items and opens shopping cart modal when clicked -->
-                <button class="cart-button" onclick="openCart()">
-                    🛒 Cart <span class="cart-count" id="cartCount">0</span>
+
+                <button
+                    class="admin-link-btn"
+                    onclick="window.location.href='admin.html'"
+                    title="Admin Panel"
+                >
+                    🔐
                 </button>
+
+                <button
+                    class="cart-button"
+                    onclick="openCart()"
+                >
+                    🛒 Cart
+                    <span
+                        class="cart-count"
+                        id="cartCount"
+                    >
+                        0
+                    </span>
+                </button>
+
             </div>
         </div>
     </nav>
 
-    <!-- 
-      ========== MAIN CONTENT LAYOUT ==========
-      The main container that holds both the category sidebar and product display area.
-      Uses flexbox to arrange items vertically (category bar on top, products below)
-    -->
+
+    <!-- ========== MAIN CONTENT ========== -->
+
     <div class="main-container">
-        <!-- 
-          ========== CATEGORY SIDEBAR ==========
-          Displays product categories as horizontal scrollable thumbnail buttons.
-          When a category is clicked, it filters products to show only that category.
-          
-          Examples: Electronics, Clothing, Books, Home, Sports, Toys, Food, Beauty, etc.
-          Each category has an emoji icon for visual recognition.
-        -->
+
+        <!-- ========== CATEGORY SIDEBAR ========== -->
+
         <aside class="horizontal-sidebar">
+
             <div class="sidebar-section">
+
                 <h3>📁 Categories</h3>
-                <!-- This div is populated by JavaScript with category thumbnails -->
-                <div id="categoriesFilter" class="categories-horizontal"></div>
+
+                <div
+                    id="categoriesFilter"
+                    class="categories-horizontal"
+                ></div>
+
             </div>
+
         </aside>
 
-        <!-- 
-          ========== MAIN CONTENT AREA ==========
-          This is where all the product information is displayed.
-          Scrolls independently so users can browse while keeping navigation visible.
-        -->
+
+        <!-- ========== MAIN CONTENT AREA ========== -->
+
         <div class="content-area">
-            <!-- 
-              ========== HOT DISCOUNTS SECTION ==========
-              Shows products that have special discounts/offers.
-              This carousel displays items with the highest discount percentages.
-              Users can scroll through to see deals.
-            -->
-            <section id="discounts" class="featured-section discount-section">
+
+            <!-- ========== HOT DISCOUNTS ========== -->
+
+            <section
+                id="discounts"
+                class="featured-section discount-section"
+            >
+
                 <div class="section-header">
+
                     <h2>🔥 Hot Discounts</h2>
-                    <p>Limited time offers - save now!</p>
+
+                    <p>
+                        Limited time offers - save now!
+                    </p>
+
                 </div>
-                <!-- This container is populated by JavaScript with discounted products -->
-                <div id="discountsContainer" class="product-carousel"></div>
+
+                <div
+                    id="discountsContainer"
+                    class="product-carousel"
+                ></div>
+
             </section>
 
-            <!-- 
-              ========== PRODUCTS GRID ==========
-              The main product display area showing all products.
-              Each product card shows:
-              - Product image
-              - Product name and category
-              - Original and discounted price
-              - Star rating and review count
-              - "Add to Cart" button
-              - "Review" button to read/write reviews
-              
-              Products are loaded from the backend API and can be:
-              - Filtered by category
-              - Searched using the search bar
-              - Sorted by name, price, or rating
-              - Filtered by price range
-            -->
+
+            <!-- ========== PRODUCTS GRID ========== -->
+
             <div class="product-container">
-                <!-- Products will be loaded here by JavaScript from the API -->
+                <!-- Products loaded from backend -->
             </div>
+
         </div>
+
     </div>
 
-    <!-- 
-      ========== SHOPPING CART MODAL ==========
-      A pop-up window that shows the customer's shopping cart.
-      Displays:
-      - List of items in cart with quantity and price
-      - Total price calculation
-      - Buttons to checkout or clear cart
-      
-      Hidden by default and shown when user clicks cart button in navbar.
-    -->
-    <div id="cartModal" class="modal">
+
+    <!-- ========== SHOPPING CART MODAL ========== -->
+
+    <div
+        id="cartModal"
+        class="modal"
+    >
+
         <div class="modal-content">
-            <span class="close" onclick="closeCart()">&times;</span>
+
+            <span
+                class="close"
+                onclick="closeCart()"
+            >
+                &times;
+            </span>
+
             <h2>🛒 Shopping Cart</h2>
-            <div id="cartItems" class="cart-items-list"></div>
+
+            <div
+                id="cartItems"
+                class="cart-items-list"
+            ></div>
+
             <div class="cart-summary">
-                <h3>Total: $<span id="cartTotal">0.00</span></h3>
-                <button class="checkout-btn" onclick="checkout()">✓ Proceed to Checkout</button>
-                <button class="clear-cart-btn" onclick="clearCart()">🗑️ Clear Cart</button>
+
+                <h3>
+                    Total:
+                    $<span id="cartTotal">0.00</span>
+                </h3>
+
+                <button
+                    class="checkout-btn"
+                    onclick="checkout()"
+                >
+                    ✓ Proceed to Checkout
+                </button>
+
+                <button
+                    class="clear-cart-btn"
+                    onclick="clearCart()"
+                >
+                    🗑️ Clear Cart
+                </button>
+
             </div>
+
         </div>
+
     </div>
 
-    <!-- Review Modal -->
-    <div id="reviewModal" class="modal">
+
+    <!-- ========== REVIEW MODAL ========== -->
+
+    <div
+        id="reviewModal"
+        class="modal"
+    >
+
         <div class="modal-content review-modal">
-            <span class="close" onclick="closeReviewModal()">&times;</span>
-            <h2 id="reviewProductName">Product Reviews</h2>
-            
+
+            <span
+                class="close"
+                onclick="closeReviewModal()"
+            >
+                &times;
+            </span>
+
+            <h2 id="reviewProductName">
+                Product Reviews
+            </h2>
+
+
             <!-- Reviews Display -->
-            <div id="reviewsContainer" class="reviews-container"></div>
-            
+
+            <div
+                id="reviewsContainer"
+                class="reviews-container"
+            ></div>
+
+
             <!-- Add Review Form -->
+
             <div class="add-review-section">
+
                 <h3>Leave a Review</h3>
-                <form id="reviewForm" onsubmit="submitReview(event)">
-                    <input type="hidden" id="reviewProductId" value="">
-                    
+
+                <form
+                    id="reviewForm"
+                    onsubmit="submitReview(event)"
+                >
+
+                    <input
+                        type="hidden"
+                        id="reviewProductId"
+                        value=""
+                    >
+
+
                     <div class="form-group">
-                        <label>Your Name:</label>
-                        <input type="text" id="reviewCustomerName" required>
+
+                        <label>
+                            Your Name:
+                        </label>
+
+                        <input
+                            type="text"
+                            id="reviewCustomerName"
+                            required
+                        >
+
                     </div>
-                    
+
+
                     <div class="form-group">
-                        <label>Rating:</label>
-                        <select id="reviewRating" required>
-                            <option value="">-- Select Rating --</option>
-                            <option value="5">⭐⭐⭐⭐⭐ (5 - Excellent)</option>
-                            <option value="4">⭐⭐⭐⭐ (4 - Good)</option>
-                            <option value="3">⭐⭐⭐ (3 - Average)</option>
-                            <option value="2">⭐⭐ (2 - Fair)</option>
-                            <option value="1">⭐ (1 - Poor)</option>
+
+                        <label>
+                            Rating:
+                        </label>
+
+                        <select
+                            id="reviewRating"
+                            required
+                        >
+
+                            <option value="">
+                                -- Select Rating --
+                            </option>
+
+                            <option value="5">
+                                ⭐⭐⭐⭐⭐ (5 - Excellent)
+                            </option>
+
+                            <option value="4">
+                                ⭐⭐⭐⭐ (4 - Good)
+                            </option>
+
+                            <option value="3">
+                                ⭐⭐⭐ (3 - Average)
+                            </option>
+
+                            <option value="2">
+                                ⭐⭐ (2 - Fair)
+                            </option>
+
+                            <option value="1">
+                                ⭐ (1 - Poor)
+                            </option>
+
                         </select>
+
                     </div>
-                    
+
+
                     <div class="form-group">
-                        <label>Review Title:</label>
-                        <input type="text" id="reviewTitle" required>
+
+                        <label>
+                            Review Title:
+                        </label>
+
+                        <input
+                            type="text"
+                            id="reviewTitle"
+                            required
+                        >
+
                     </div>
-                    
+
+
                     <div class="form-group">
-                        <label>Comment:</label>
-                        <textarea id="reviewComment" rows="4"></textarea>
+
+                        <label>
+                            Comment:
+                        </label>
+
+                        <textarea
+                            id="reviewComment"
+                            rows="4"
+                        ></textarea>
+
                     </div>
-                    
-                    <button type="submit" class="submit-review-btn">Submit Review</button>
+
+
+                    <button
+                        type="submit"
+                        class="submit-review-btn"
+                    >
+                        Submit Review
+                    </button>
+
                 </form>
+
             </div>
+
         </div>
+
     </div>
 
-    <!-- Footer -->
+
+    <!-- ========== FOOTER ========== -->
+
     <footer>
-        <p>&copy; 2024 Karma Lokdruel Tshongley. All rights reserved.</p>
-        <p>Connected to Backend API at http://localhost:5000</p>
+
+        <p>
+            &copy; 2024 Karma Lokdruel Tshongley.
+            All rights reserved.
+        </p>
+
+        <p>
+            Connected to Production Backend API
+        </p>
+
     </footer>
 
-    <!-- Scripts -->
+
+    <!-- ========== JAVASCRIPT ========== -->
+
     <script src="script.js"></script>
+
 </body>
 
 </html>

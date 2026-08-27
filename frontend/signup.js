@@ -1,6 +1,9 @@
 const form = document.getElementById('signupForm');
 const message = document.getElementById('message');
 
+// ========== DEPLOYED BACKEND API ==========
+const API_URL = 'https://YOUR-ACTUAL-RENDER-URL.onrender.com/api';
+
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
 
@@ -8,10 +11,15 @@ form.addEventListener('submit', async (e) => {
   const password = document.getElementById('password').value;
 
   try {
-    const res = await fetch('http://localhost:5000/api/signup', {
+    const res = await fetch(`${API_URL}/signup`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        email,
+        password
+      })
     });
 
     const data = await res.json();
@@ -24,12 +32,15 @@ form.addEventListener('submit', async (e) => {
       setTimeout(() => {
         window.location.href = "login.html";
       }, 1000);
+
     } else {
       message.className = 'error';
       message.textContent = data.message;
     }
+
   } catch (err) {
     console.error(err);
+
     message.className = 'error';
     message.textContent = "Server not reachable";
   }
