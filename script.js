@@ -15,7 +15,7 @@
 */
 
 // ========== API CONFIGURATION ==========
-// Production backend deployed on Render
+// Same-origin API used locally and on Vercel
 const API_URL = '/api';
 
 // ========== PRODUCT DATABASE & CART VARIABLES ==========

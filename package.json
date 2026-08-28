@@ -2,7 +2,7 @@
   "name": "ecommerce-store",
   "version": "1.0.0",
   "description": "E-commerce store with a Vercel-ready Express API",
-  "main": "server.js",
+  "main": "api/index.js",
   "scripts": {
     "start": "node api/index.js",
     "dev": "node api/index.js",
