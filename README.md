@@ -1,144 +1,25 @@
-# E-Commerce Backend API
+# E-Commerce Store
 
-## Setup Instructions
+This repository contains a static e-commerce frontend and an Express API that can be deployed together on Vercel.
 
-### 1. Install Dependencies
+## Run locally
+
 ```bash
 npm install
-```
-
-### 2. Start the Server
-```bash
 npm start
 ```
 
-The server will run on `http://localhost:5000`
+Open `http://localhost:5000`.
 
-## API Endpoints
+## Deploy on Vercel
 
-### Products
+1. Push this repository to GitHub.
+2. In Vercel, select **Add New Project** and import the repository.
+3. Keep the project root and build settings at their defaults.
+4. Deploy. Vercel serves the HTML files and routes `/api/*` to `api/index.js`.
 
-#### Get All Products
-```
-GET /api/products
-Query Parameters:
-  - category: Filter by category
-  - minPrice: Minimum price filter
-  - maxPrice: Maximum price filter
-  - search: Search by product name
-```
+The frontend uses same-origin API requests, so no Render URL or environment variable is required.
 
-#### Get Single Product
-```
-GET /api/products/:id
-```
+## Important storage note
 
-#### Get Categories
-```
-GET /api/categories
-```
-
-### Search
-
-#### Search Products
-```
-POST /api/search
-Body: { "query": "laptop" }
-```
-
-### Cart
-
-#### Validate Cart Items
-```
-POST /api/validate-cart
-Body: { 
-  "items": [
-    { "name": "laptop", "quantity": 1, "price": 1199.99 }
-  ]
-}
-```
-
-### Orders
-
-#### Create Order
-```
-POST /api/orders
-Body: {
-  "items": [
-    { "name": "laptop", "quantity": 1, "price": 1199.99 }
-  ],
-  "total": 1199.99,
-  "customer": {
-    "name": "John Doe",
-    "email": "john@example.com"
-  }
-}
-```
-
-#### Get Order Details
-```
-GET /api/orders/:orderId
-```
-
-#### Get All Orders
-```
-GET /api/orders
-```
-
-### Health
-
-#### Health Check
-```
-GET /api/health
-```
-
-## Example Usage
-
-### Frontend Integration
-
-```javascript
-// Fetch products
-fetch('http://localhost:5000/api/products')
-  .then(res => res.json())
-  .then(data => console.log(data));
-
-// Create order
-fetch('http://localhost:5000/api/orders', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    items: [...],
-    total: 100,
-    customer: { name: 'User' }
-  })
-})
-.then(res => res.json())
-.then(data => console.log(data));
-```
-
-## Features
-
-✅ Product listing with filters
-✅ Search functionality
-✅ Cart validation
-✅ Order management
-✅ Category management
-✅ CORS enabled
-✅ JSON responses
-✅ Error handling
-
-## Architecture
-
-- **Express.js** - Web framework
-- **CORS** - Cross-origin resource sharing
-- **In-memory storage** - For demo purposes (use database in production)
-
-## Future Enhancements
-
-- [ ] Database integration (MongoDB/PostgreSQL)
-- [ ] User authentication
-- [ ] Payment processing
-- [ ] Order tracking
-- [ ] Admin dashboard
-- [ ] Email notifications
-- [ ] Inventory management
+Products are source data in the API, but users, orders, and reviews are currently stored in memory. They can reset when a Vercel function restarts. Add a persistent database before using this for real customer accounts or payments.

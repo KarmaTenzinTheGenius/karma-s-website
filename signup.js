@@ -2,7 +2,7 @@ const form = document.getElementById('signupForm');
 const message = document.getElementById('message');
 
 // ========== DEPLOYED BACKEND API ==========
-const API_URL = 'https://karma-s-website-1.onrender.com/api';
+const API_URL = '/api';
 
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
