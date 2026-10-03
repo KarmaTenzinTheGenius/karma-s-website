@@ -1,5 +1,6 @@
 export type DemoOrder = {
   orderId: string;
+  userId: string;
   items: { id: number; name: string; quantity: number; unitPrice: number }[];
   subtotal: number;
   discount: number;

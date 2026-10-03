@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
 import { Toaster } from 'sonner';
-import { Footer, Header } from '@/components/storefront-shell';
+import { SiteFrame } from '@/components/site-frame';
 import { Analytics } from '@/components/analytics';
 import './globals.css';
+import './auth.css';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://karma-s-website.vercel.app'),
@@ -23,9 +24,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en-IN" data-scroll-behavior="smooth">
       <body>
-        <Header />
-        <main>{children}</main>
-        <Footer />
+        <SiteFrame>{children}</SiteFrame>
         <Toaster position="bottom-right" richColors />
         <Analytics />
       </body>

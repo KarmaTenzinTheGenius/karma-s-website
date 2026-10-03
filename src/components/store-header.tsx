@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Heart, Moon, Search, ShoppingBag, Sun, UserRound } from 'lucide-react';
 import { products } from '@/lib/products';
 import { readCart, readWishlist } from '@/lib/client-store';
+import { toast } from 'sonner';
 
 export function StoreHeader() {
   const [cartCount, setCartCount] = useState(0);
@@ -42,6 +43,16 @@ export function StoreHeader() {
     localStorage.setItem('karma-theme', next ? 'dark' : 'light');
   }
 
+  async function signOut() {
+    try {
+      const response = await fetch('/api/auth/logout', { method: 'POST' });
+      if (!response.ok) throw new Error('Sign-out request failed.');
+      window.location.assign('/account');
+    } catch {
+      toast.error('We could not sign you out. Please try again.');
+    }
+  }
+
   return (
     <header className="site-header">
       <div className="header-main page-wrap">
@@ -53,7 +64,7 @@ export function StoreHeader() {
           {focused && suggestions.length > 0 && <div className="search-suggestions" role="listbox">{suggestions.map((product) => <Link key={product.id} href={`/product/${product.slug}`} role="option"><span>{product.name}</span><small>{product.category}</small></Link>)}</div>}
         </form>
         <nav className="header-actions" aria-label="Account and shopping">
-          <details className="account-menu"><summary><UserRound size={19} /><span>Account</span></summary><div className="account-dropdown"><strong>Your account</strong><Link href="/account">Sign in / Register</Link><Link href="/account?view=orders">My orders</Link><Link href="/track-order">Track an order</Link></div></details>
+          <details className="account-menu"><summary><UserRound size={19} /><span>Account</span></summary><div className="account-dropdown"><strong>Your account</strong><Link href="/track-order">Track an order</Link><button type="button" onClick={signOut}>Sign out</button></div></details>
           <Link href="/wishlist"><span className="action-icon"><Heart size={19} />{wishlistCount > 0 && <b>{wishlistCount}</b>}</span><span>Wishlist</span></Link>
           <Link href="/cart"><span className="action-icon"><ShoppingBag size={19} />{cartCount > 0 && <b>{cartCount}</b>}</span><span>Bag</span></Link>
           <button className="theme-toggle" type="button" onClick={toggleTheme} aria-label={darkMode ? 'Switch to light theme' : 'Switch to dark theme'}>{darkMode ? <Sun size={18} /> : <Moon size={18} />}</button>

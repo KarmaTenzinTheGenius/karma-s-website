@@ -2,8 +2,11 @@ import { randomUUID } from 'node:crypto';
 import { NextResponse } from 'next/server';
 import { discountedPrice, products } from '@/lib/products';
 import { demoOrders, validateCoupon, type DemoOrder } from '@/lib/demo-orders';
+import { getAdminSession, getCustomerSession } from '@/lib/auth-server';
 
 export async function POST(request: Request) {
+  const session = await getCustomerSession();
+  if (!session) return NextResponse.json({ success: false, message: 'Please sign in to place an order.' }, { status: 401 });
   const body = await request.json().catch(() => null);
   if (!body || !Array.isArray(body.items) || body.items.length === 0) {
     return NextResponse.json({ success: false, message: 'Your bag is empty.' }, { status: 400 });
@@ -25,6 +28,7 @@ export async function POST(request: Request) {
   const orderId = `KLT-${randomUUID().slice(0, 8).toUpperCase()}`;
   const order: DemoOrder = {
     orderId,
+    userId: session.userId,
     items,
     subtotal,
     discount: couponResult.discount,
@@ -41,5 +45,8 @@ export async function POST(request: Request) {
 }
 
 export function GET() {
-  return NextResponse.json({ success: true, data: [...demoOrders.values()], demo: true });
+  return getAdminSession().then((session) => {
+    if (!session) return NextResponse.json({ success: false, message: 'Admin access is required.' }, { status: 403 });
+    return NextResponse.json({ success: true, data: [...demoOrders.values()], demo: true });
+  });
 }
