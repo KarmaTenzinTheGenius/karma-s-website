@@ -41,7 +41,7 @@ export function AdminLoginForm() {
       <button className="button button-dark" type="submit" disabled={isSubmitting}>
         {isSubmitting ? 'Please wait…' : 'Sign in'}
       </button>
-      {message && <p className="form-feedback" role="alert">{message}</p>}
+      {message && <p className="form-feedback form-feedback-error" role="alert">{message}</p>}
     </form>
   );
 }

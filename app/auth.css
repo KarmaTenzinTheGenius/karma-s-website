@@ -8,6 +8,7 @@
 .account-page .account-form input{margin-top:7px}
 .account-page .account-form .button{width:100%;margin-top:18px}
 .account-page .account-hint{font-size:10px;color:var(--muted)}
+.form-feedback-error{color:#b42318;font-weight:600}
 .account-page .account-quick-links{display:flex;justify-content:flex-end;margin-top:16px;font-size:11px}
 .admin-page{width:min(100% - 32px,960px);padding-block:40px 60px}
 .admin-page h1{font:36px Georgia,serif;margin:7px 0 28px}

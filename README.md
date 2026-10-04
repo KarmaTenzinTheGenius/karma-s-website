@@ -9,7 +9,7 @@ npm install
 npm run dev
 ```
 
-Open `http://localhost:3000`. Visitors are directed to the account page to sign in or create an account before browsing the store. Customer accounts require a configured PostgreSQL database (`DATABASE_URL`).
+Open `http://localhost:3000`. Visitors are directed to the account page to sign in or create an account before browsing the store. To access the development server at `http://192.168.56.1:3000`, that host is allowlisted in `next.config.mjs`; restart the dev server after changing its configuration. Customer accounts require a configured PostgreSQL database (`DATABASE_URL`).
 
 Set `SESSION_SECRET` to a random secret of at least 32 characters and `ADMIN_PASSWORD` to a unique password of at least 12 characters in `.env`. The password-protected admin dashboard is available at `/admin`. Do not expose these secrets in browser-facing `NEXT_PUBLIC_` variables.
 

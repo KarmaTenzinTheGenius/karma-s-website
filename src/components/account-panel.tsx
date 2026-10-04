@@ -78,7 +78,7 @@ export function AccountPanel() {
         <button className="button button-dark" type="submit" disabled={isSubmitting}>
           {isSubmitting ? 'Please wait…' : mode}
         </button>
-        {message && <p className="form-feedback" role="alert">{message}</p>}
+        {message && <p className="form-feedback form-feedback-error" role="alert">{message}</p>}
       </form>
       <div className="account-quick-links"><Link href="/admin">Admin sign in</Link></div>
     </div>
