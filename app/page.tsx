@@ -2,6 +2,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowRight, BadgeCheck, PackageCheck, RotateCcw, ShieldCheck } from 'lucide-react';
 import { products, categories, discountedPrice } from '@/lib/products';
+import { formatMoney, FREE_SHIPPING_THRESHOLD } from '@/lib/currency';
 import { ProductActions } from '@/components/product-actions';
 
 export default function HomePage() {
@@ -25,7 +26,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="benefit-strip" aria-label="Shopping benefits"><div className="page-wrap benefit-grid"><Benefit icon={<PackageCheck />} title="Free shipping" text="On orders over $75" /><Benefit icon={<BadgeCheck />} title="COD available" text="Pay when it arrives" /><Benefit icon={<RotateCcw />} title="Easy returns" text="7-day return window" /><Benefit icon={<ShieldCheck />} title="Secure checkout" text="Your details stay safe" /></div></section>
+      <section className="benefit-strip" aria-label="Shopping benefits"><div className="page-wrap benefit-grid"><Benefit icon={<PackageCheck />} title="Free shipping" text={`On orders over ${formatMoney(FREE_SHIPPING_THRESHOLD)}`} /><Benefit icon={<BadgeCheck />} title="COD available" text="Pay when it arrives" /><Benefit icon={<RotateCcw />} title="Easy returns" text="7-day return window" /><Benefit icon={<ShieldCheck />} title="Secure checkout" text="Your details stay safe" /></div></section>
 
       <section className="page-wrap section-block"><div className="section-heading"><div><span className="eyebrow">Browse your way</span><h2>Shop by category</h2></div><Link className="text-link" href="/products">Explore all <ArrowRight size={16} /></Link></div><div className="category-grid">{categories.map((category, index) => <Link className={`category-tile category-tile-${index % 4}`} href={`/category/${category}`} key={category}><span className="category-index">0{index + 1}</span><span>{category}</span><ArrowRight size={17} /></Link>)}</div></section>
 
@@ -43,5 +44,5 @@ function Benefit({ icon, title, text }: { icon: React.ReactNode; title: string; 
 }
 
 function ProductTile({ product }: { product: (typeof products)[number] }) {
-  return <article className="product-tile"><Link className="product-image-link" href={`/product/${product.slug}`}><Image src={product.image} alt={product.name} width={480} height={360} sizes="(max-width: 640px) 50vw, (max-width: 1000px) 33vw, 25vw" /><span className="product-category">{product.category}</span>{product.discount > 0 && <span className="discount-tag">{product.discount}% off</span>}</Link><div className="product-tile-info"><Link href={`/product/${product.slug}`}><h3>{product.name}</h3></Link><p><strong>${discountedPrice(product).toFixed(2)}</strong>{product.discount > 0 && <del>${product.price.toFixed(2)}</del>}</p><ProductActions product={product} /></div></article>;
+  return <article className="product-tile"><Link className="product-image-link" href={`/product/${product.slug}`}><Image src={product.image} alt={product.name} width={480} height={360} sizes="(max-width: 640px) 50vw, (max-width: 1000px) 33vw, 25vw" /><span className="product-category">{product.category}</span>{product.discount > 0 && <span className="discount-tag">{product.discount}% off</span>}</Link><div className="product-tile-info"><Link href={`/product/${product.slug}`}><h3>{product.name}</h3></Link><p><strong>{formatMoney(discountedPrice(product))}</strong>{product.discount > 0 && <del>{formatMoney(product.price)}</del>}</p><ProductActions product={product} /></div></article>;
 }

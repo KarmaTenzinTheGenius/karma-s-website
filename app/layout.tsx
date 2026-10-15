@@ -11,7 +11,7 @@ export const metadata: Metadata = {
     default: 'Karma Lokdruel Tshongley | Everyday finds, thoughtfully chosen',
     template: '%s | Karma Lokdruel Tshongley',
   },
-  description: 'Shop clothing, footwear, electronics and everyday accessories at Karma Lokdruel Tshongley. Discover current offers and convenient delivery across India.',
+  description: 'Shop clothing, footwear, electronics and everyday accessories at Karma Lokdruel Tshongley. Prices in Ngultrum, with delivery across Bhutan.',
   openGraph: {
     type: 'website',
     siteName: 'Karma Lokdruel Tshongley',
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en-IN" data-scroll-behavior="smooth">
+    <html lang="en-BT" data-scroll-behavior="smooth">
       <body>
         <SiteFrame>{children}</SiteFrame>
         <Toaster position="bottom-right" richColors />

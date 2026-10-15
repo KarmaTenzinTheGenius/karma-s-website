@@ -1,12 +1,30 @@
-import { randomUUID } from 'node:crypto';
 import { NextResponse } from 'next/server';
-import { demoMessages } from '@/lib/demo-contact';
+import { prisma } from '@/lib/prisma';
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
-  if (typeof body?.name !== 'string' || !body.name.trim() || typeof body?.email !== 'string' || !/^\S+@\S+\.\S+$/.test(body.email) || typeof body?.message !== 'string' || body.message.trim().length < 10) {
-    return NextResponse.json({ success: false, message: 'Enter your name, a valid email and a message of at least 10 characters.' }, { status: 400 });
+  const name = typeof body?.name === 'string' ? body.name.trim() : '';
+  const email = typeof body?.email === 'string' ? body.email.trim().toLowerCase() : '';
+  const message = typeof body?.message === 'string' ? body.message.trim() : '';
+  const orderId = typeof body?.orderId === 'string' ? body.orderId.trim().slice(0, 40) : '';
+
+  if (!name || name.length > 80 || !/^\S+@\S+\.\S+$/.test(email) || email.length > 254 || message.length < 10 || message.length > 2000) {
+    return NextResponse.json(
+      { success: false, message: 'Enter your name, a valid email and a message of at least 10 characters.' },
+      { status: 400 },
+    );
   }
-  demoMessages.push({ id: randomUUID(), name: body.name.trim().slice(0, 80), email: body.email.trim().slice(0, 254), orderId: String(body.orderId || '').slice(0, 40), message: body.message.trim().slice(0, 2000), createdAt: new Date().toISOString() });
-  return NextResponse.json({ success: true, message: 'Thanks. Your message was received in this preview; connect an email service for delivery to the store team.' }, { status: 201 });
+
+  try {
+    await prisma.contactMessage.create({
+      data: { name, email, message, orderId: orderId || null },
+    });
+    return NextResponse.json(
+      { success: true, message: 'Thank you. Your message has been received and our team will reply during shop hours.' },
+      { status: 201 },
+    );
+  } catch (error) {
+    console.error('Contact message failed.', error);
+    return NextResponse.json({ success: false, message: 'Your message could not be sent. Please try again.' }, { status: 503 });
+  }
 }

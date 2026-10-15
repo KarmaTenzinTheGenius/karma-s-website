@@ -1,3 +1,5 @@
+import { formatMoney } from '@/lib/currency';
+
 function escapeHtml(value: string) {
   return value.replace(/[&<>"']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character] || character);
 }
@@ -7,7 +9,7 @@ function emailFrame(title: string, content: string) {
 }
 
 export function orderConfirmationEmail(order: { orderId: string; name: string; total: number }) {
-  return { subject: `Order received: ${order.orderId}`, html: emailFrame('Thanks for your order.', `<p>Hello ${escapeHtml(order.name)},</p><p>We received order <strong>${escapeHtml(order.orderId)}</strong>.</p><p>Order total: <strong>$${order.total.toFixed(2)}</strong></p>`) };
+  return { subject: `Order received: ${order.orderId}`, html: emailFrame('Thanks for your order.', `<p>Hello ${escapeHtml(order.name)},</p><p>We received order <strong>${escapeHtml(order.orderId)}</strong>.</p><p>Order total: <strong>${formatMoney(order.total)}</strong></p>`) };
 }
 
 export function shippedEmail(order: { orderId: string; name: string; trackingNumber: string }) {

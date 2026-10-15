@@ -25,7 +25,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     image: [`https://karma-s-website.vercel.app${product.image}`],
     description: product.description,
     sku: product.sku,
-    offers: { '@type': 'Offer', priceCurrency: 'USD', price: discountedPrice(product), availability: product.stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock', url: `https://karma-s-website.vercel.app/product/${product.slug}` },
+    offers: { '@type': 'Offer', priceCurrency: 'BTN', price: discountedPrice(product), availability: product.stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock', url: `https://karma-s-website.vercel.app/product/${product.slug}` },
   };
   const breadcrumbSchema = { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: 'Home', item: 'https://karma-s-website.vercel.app' }, { '@type': 'ListItem', position: 2, name: product.category, item: `https://karma-s-website.vercel.app/category/${product.category}` }, { '@type': 'ListItem', position: 3, name: product.name }] };
   return <section className="page-wrap detail-page"><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(productSchema) }} /><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} /><ProductDetail product={product} related={related} /></section>;
