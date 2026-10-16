@@ -2,6 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import { Footer, Header } from '@/components/storefront-shell';
+import { ChatWidget } from '@/components/chat-widget';
 
 export function SiteFrame({ children }: Readonly<{ children: React.ReactNode }>) {
   const pathname = usePathname();
@@ -12,6 +13,7 @@ export function SiteFrame({ children }: Readonly<{ children: React.ReactNode }>)
       {!isStandalonePage && <Header />}
       <main className={isStandalonePage ? 'standalone-main' : undefined}>{children}</main>
       {!isStandalonePage && <Footer />}
+      {!isStandalonePage && <ChatWidget />}
     </>
   );
 }
