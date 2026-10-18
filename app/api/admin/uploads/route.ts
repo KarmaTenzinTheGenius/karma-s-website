@@ -8,7 +8,10 @@ const ALLOWED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/g
 export async function POST(request: Request) {
   if (!(await getAdminSession())) return NextResponse.json({ success: false, message: 'Admin access is required.' }, { status: 403 });
   if (!process.env.BLOB_READ_WRITE_TOKEN) {
-    return NextResponse.json({ success: false, message: 'Image storage is not configured. Set BLOB_READ_WRITE_TOKEN.' }, { status: 503 });
+    return NextResponse.json({
+      success: false,
+      message: 'Custom image uploads are not configured. You can still save the product with the default image; set BLOB_READ_WRITE_TOKEN to enable uploads.',
+    }, { status: 503 });
   }
 
   let form: FormData;

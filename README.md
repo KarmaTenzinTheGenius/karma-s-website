@@ -4,7 +4,7 @@ This repository is a Next.js App Router storefront for Vercel, not a Vite/Expres
 
 ## Local setup
 
-Requirements: Node.js supported by the installed Next.js version, a PostgreSQL database, and a Vercel Blob store for product image uploads.
+Requirements: Node.js supported by the installed Next.js version and a PostgreSQL database. A Vercel Blob store is optional for creating products, but required for uploading custom product images.
 
 ```powershell
 if (-not (Test-Path .env)) { Copy-Item .env.example .env }
@@ -21,9 +21,9 @@ Open `http://localhost:3000`. Enter the following server-only settings in `.env`
 - `DATABASE_URL`: PostgreSQL connection URL.
 - `SESSION_SECRET`: random secret with at least 32 characters.
 - `ADMIN_PASSWORD`: unique admin password with at least 12 characters.
-- `BLOB_READ_WRITE_TOKEN`: token for the Vercel Blob store used for product images.
+- `BLOB_READ_WRITE_TOKEN` (optional): token for the Vercel Blob store used for custom product image uploads. Without it, products can still be created with the store's default shirt image.
 
-Never prefix these values with `NEXT_PUBLIC_`. The admin dashboard is at `/admin`. Image uploads accept JPG, PNG, WebP, and GIF up to 4 MB each, with up to 8 images per product. An administrator can select a primary image and set product publication status, product details, and individual size/colour stock.
+Never prefix these values with `NEXT_PUBLIC_`. The admin dashboard is at `/admin`. When Blob storage is configured, image uploads accept JPG, PNG, WebP, and GIF up to 4 MB each, with up to 8 images per product. An administrator can select a primary image and set product publication status, product details, and individual size/colour stock.
 
 `prisma/migrations/20261018100000_product_inventory_management/migration.sql` adds the product lifecycle, categories, image records, variants, stock movements, settings, and database constraints. It preserves existing product rows and creates category records for their existing category values. `npm run db:seed` adds the original sample catalogue only when its product IDs do not exist; it does not overwrite existing products or admin edits.
 
@@ -48,8 +48,8 @@ Apply migrations to the same database URL used by the running application. Migra
 
 ## Vercel deployment
 
-1. Create/configure the PostgreSQL database and a Vercel Blob store.
-2. Add `DATABASE_URL`, `SESSION_SECRET`, `ADMIN_PASSWORD`, and `BLOB_READ_WRITE_TOKEN` as server-side Vercel project environment variables for the required deployment environments.
+1. Create/configure the PostgreSQL database; create a Vercel Blob store if custom product image uploads are needed.
+2. Add `DATABASE_URL`, `SESSION_SECRET`, and `ADMIN_PASSWORD` as server-side Vercel project environment variables for the required deployment environments. Add `BLOB_READ_WRITE_TOKEN` to enable custom image uploads.
 3. From a trusted PowerShell session configured with the production database URL, run `npm run db:migrate`; run `npm run db:seed` once if the sample products should be imported.
 4. Deploy the project using Vercel's Next.js detection. The build script generates Prisma Client and builds the Next.js app; it does not modify the database.
 5. Open `/admin` on the deployed site and verify admin sign-in and a small image upload before enabling product operations.

@@ -44,7 +44,7 @@ const NAVIGATION: { id: Tab; label: string }[] = [
 
 const EMPTY_DRAFT: ProductDraft = {
   name: '', description: '', sku: '', category: '', subcategory: '', price: '', mrp: '', stock: '0',
-  image: '', images: [], brand: '', material: '', gender: '', tags: '', featured: false, status: 'DRAFT', variants: [],
+  image: '/image/shirt.jpg', images: [], brand: '', material: '', gender: '', tags: '', featured: false, status: 'DRAFT', variants: [],
 };
 
 async function api<T>(url: string, init?: RequestInit): Promise<T> {
@@ -217,7 +217,7 @@ export function AdminDashboard({ signOut }: { signOut: () => void }) {
         setDraft((current) => ({
           ...current,
           images: [...current.images, result.data!.url],
-          image: current.image || result.data!.url,
+          image: current.images.length ? current.image : result.data!.url,
         }));
         setUploadProgress(null);
       };
@@ -354,9 +354,9 @@ function ProductForm({ draft, setDraft, editing, busy, progress, categories, onS
       <label>Publication status<select value={draft.status} onChange={(event) => update('status', event.target.value as ProductDraft['status'])}><option value="DRAFT">Draft / unpublished</option><option value="ACTIVE">Active / published</option><option value="ARCHIVED">Archived</option></select></label>
       <label className="admin-checkbox"><input type="checkbox" checked={draft.featured} onChange={(event) => update('featured', event.target.checked)} /> Feature this product</label>
     </div>
-    <fieldset className="admin-image-field"><legend>Product images * (up to 8, JPG/PNG/WebP/GIF, 4 MB each)</legend><input type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple onChange={(event) => onUpload(event.target.files)} />{progress !== null && <progress value={progress} max="100">{progress}%</progress>}<div className="admin-image-list">{draft.images.map((url) => <article key={url}><Image src={url} alt="Product image preview" width={90} height={90} /><label><input type="radio" name="primary-image" checked={draft.image === url} onChange={() => update('image', url)} /> Main image</label><button className="button button-danger" type="button" onClick={() => { const next = draft.images.filter((item) => item !== url); update('images', next); if (draft.image === url) update('image', next[0] ?? ''); }}>Remove</button></article>)}</div></fieldset>
+    <fieldset className="admin-image-field"><legend>Product images (optional, up to 8; JPG/PNG/WebP/GIF, 4 MB each)</legend><p>Without image storage, products use the store’s default shirt image. Set BLOB_READ_WRITE_TOKEN to upload custom images.</p><input type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple onChange={(event) => onUpload(event.target.files)} />{progress !== null && <progress value={progress} max="100">{progress}%</progress>}<div className="admin-image-list">{draft.images.map((url) => <article key={url}><Image src={url} alt="Product image preview" width={90} height={90} /><label><input type="radio" name="primary-image" checked={draft.image === url} onChange={() => update('image', url)} /> Main image</label><button className="button button-danger" type="button" onClick={() => { const next = draft.images.filter((item) => item !== url); update('images', next); if (draft.image === url) update('image', next[0] ?? '/image/shirt.jpg'); }}>Remove</button></article>)}</div></fieldset>
     <fieldset className="admin-variant-field"><legend>Size and colour inventory</legend><p>Add one row for each sellable size/colour combination. Variant stock replaces the product-level stock quantity.</p>{draft.variants.map((variant, index) => <div className="admin-variant-row" key={`${index}-${variant.sku}`}><label>Size<input list="standard-sizes" value={variant.size} onChange={(event) => update('variants', draft.variants.map((item, row) => row === index ? { ...item, size: event.target.value } : item))} /><datalist id="standard-sizes">{['XS', 'S', 'M', 'L', 'XL', 'XXL'].map((size) => <option value={size} key={size} />)}</datalist></label><label>Color name<input value={variant.colorName} onChange={(event) => update('variants', draft.variants.map((item, row) => row === index ? { ...item, colorName: event.target.value } : item))} /></label><label>Swatch<input type="color" value={variant.colorHex || '#333333'} onChange={(event) => update('variants', draft.variants.map((item, row) => row === index ? { ...item, colorHex: event.target.value } : item))} /></label><label>Variant SKU<input value={variant.sku} onChange={(event) => update('variants', draft.variants.map((item, row) => row === index ? { ...item, sku: event.target.value.toUpperCase() } : item))} /></label><label>Stock<input type="number" min="0" max="1000000" step="1" value={variant.stock} onChange={(event) => update('variants', draft.variants.map((item, row) => row === index ? { ...item, stock: Number(event.target.value) } : item))} /></label><button className="button button-danger" type="button" onClick={() => update('variants', draft.variants.filter((_, row) => row !== index))}>Remove</button></div>)}<button className="button button-outline" type="button" onClick={onAddVariant}>Add size / colour</button></fieldset>
-    <div className="admin-form-actions"><button className="button button-dark" type="submit" disabled={busy || !draft.image}>{busy ? 'Saving…' : editing ? 'Save product' : 'Create product'}</button><button className="button button-outline" type="button" onClick={onCancel}>Clear form</button></div>
+    <div className="admin-form-actions"><button className="button button-dark" type="submit" disabled={busy}>{busy ? 'Saving…' : editing ? 'Save product' : 'Create product'}</button><button className="button button-outline" type="button" onClick={onCancel}>Clear form</button></div>
   </form>;
 }
 
