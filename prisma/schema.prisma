@@ -127,6 +127,13 @@ model ProductImage {
   @@index([productId, sortOrder])
 }
 
+model ProductImageAsset {
+  id          String   @id @default(cuid())
+  contentType String
+  data        Bytes
+  createdAt   DateTime @default(now())
+}
+
 model ProductVariant {
   id        String      @id @default(cuid())
   productId Int

@@ -1,10 +1,10 @@
 # Karma Lokdruel Tshongley
 
-This repository is a Next.js App Router storefront for Vercel, not a Vite/Express application. It uses Prisma with PostgreSQL for persistent product, category, variant, stock, order, customer, and store-setting data. Product images uploaded in the admin area are stored in Vercel Blob.
+This repository is a Next.js App Router storefront for Vercel, not a Vite/Express application. It uses Prisma with PostgreSQL for persistent product, category, variant, stock, order, customer, store-setting, and product image data.
 
 ## Local setup
 
-Requirements: Node.js supported by the installed Next.js version and a PostgreSQL database. A Vercel Blob store is optional for creating products, but required for uploading custom product images.
+Requirements: Node.js supported by the installed Next.js version and a PostgreSQL database.
 
 ```powershell
 if (-not (Test-Path .env)) { Copy-Item .env.example .env }
@@ -21,9 +21,8 @@ Open `http://localhost:3000`. Enter the following server-only settings in `.env`
 - `DATABASE_URL`: PostgreSQL connection URL.
 - `SESSION_SECRET`: random secret with at least 32 characters.
 - `ADMIN_PASSWORD`: unique admin password with at least 12 characters.
-- `BLOB_READ_WRITE_TOKEN` (optional for local development): token for the Vercel Blob store used for durable custom product image uploads. Locally, without this token, images are saved in the ignored `public/product-uploads` folder. On Vercel, configure Blob because serverless filesystem uploads are not persistent.
 
-Never prefix these values with `NEXT_PUBLIC_`. The admin dashboard is at `/admin`. Image uploads accept JPG, PNG, WebP, AVIF, and BMP up to 20 MB before processing; static images are resized to a maximum 1600-pixel edge and compressed below 4 MB, while animated GIFs are preserved up to 4 MB. Products can have up to 8 images. An administrator can select a primary image and set product publication status, product details, and individual size/colour stock.
+Never prefix these values with `NEXT_PUBLIC_`. The admin dashboard is at `/admin`. Product images are stored in PostgreSQL and served through a public image route, so no separate Blob token is required. Uploads accept JPG, PNG, WebP, AVIF, and BMP up to 20 MB before processing; static images are resized to a maximum 1600-pixel edge and compressed below 4 MB, while animated GIFs are preserved up to 4 MB. Products can have up to 8 images. An administrator can select a primary image and set product publication status, product details, and individual size/colour stock.
 
 `prisma/migrations/20261018100000_product_inventory_management/migration.sql` adds the product lifecycle, categories, image records, variants, stock movements, settings, and database constraints. It preserves existing product rows and creates category records for their existing category values. `npm run db:seed` adds the original sample catalogue only when its product IDs do not exist; it does not overwrite existing products or admin edits.
 
@@ -48,13 +47,11 @@ Apply migrations to the same database URL used by the running application. Migra
 
 ## Vercel deployment
 
-1. Create/configure the PostgreSQL database; create a Vercel Blob store if custom product image uploads are needed.
-2. Add `DATABASE_URL`, `SESSION_SECRET`, and `ADMIN_PASSWORD` as server-side Vercel project environment variables for the required deployment environments. Add `BLOB_READ_WRITE_TOKEN` to enable custom image uploads.
+1. Create/configure the PostgreSQL database.
+2. Add `DATABASE_URL`, `SESSION_SECRET`, and `ADMIN_PASSWORD` as server-side Vercel project environment variables for the required deployment environments.
 3. From a trusted PowerShell session configured with the production database URL, run `npm run db:migrate`; run `npm run db:seed` once if the sample products should be imported.
 4. Deploy the project using Vercel's Next.js detection. The build script generates Prisma Client and builds the Next.js app; it does not modify the database.
 5. Open `/admin` on the deployed site and verify admin sign-in and a small image upload before enabling product operations.
-
-Blob URLs are allowed by the Next.js image configuration only for Vercel's public Blob hostname. Storage limits, retention, and pricing depend on the selected Vercel plan and can change; confirm current limits in the provider dashboard.
 
 ## Production limitations
 
