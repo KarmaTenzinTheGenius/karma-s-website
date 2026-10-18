@@ -9,9 +9,26 @@ export type Product = {
   description: string;
   stock: number;
   sku: string;
+  mrp?: number | null;
+  subcategory?: string | null;
+  brand?: string | null;
+  material?: string | null;
+  gender?: string | null;
+  tags?: string[];
+  featured?: boolean;
+  status?: 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
+  images?: { id: string; url: string; sortOrder: number; isPrimary: boolean }[];
+  variants?: {
+    id: string;
+    size: string | null;
+    colorName: string | null;
+    colorHex: string | null;
+    sku: string | null;
+    stock: number;
+  }[];
 };
 
-export const products: Product[] = [
+export const seedProducts: Product[] = [
   { id: 1, slug: 'running-shoes', name: 'Running Shoes', price: 7499, category: 'footwear', image: '/image/shoe.jpg', discount: 15, description: 'Lightweight everyday trainers with a cushioned sole for walks, workouts and the miles in between.', stock: 18, sku: 'KLT-FT-001' },
   { id: 2, slug: 'smartphone', name: 'Smartphone', price: 74999, category: 'electronics', image: '/image/phone.jpg', discount: 0, description: 'A capable everyday smartphone with a vivid display, reliable battery and plenty of room for your essentials.', stock: 8, sku: 'KLT-EL-002' },
   { id: 3, slug: 'guitar', name: 'Guitar', price: 18999, category: 'instruments', image: '/image/guitar.jpg', discount: 10, description: 'A versatile acoustic guitar with a warm, balanced tone for practice, songwriting and small gatherings.', stock: 11, sku: 'KLT-IN-003' },
@@ -29,8 +46,13 @@ export const products: Product[] = [
   { id: 15, slug: 'sniker', name: 'Sniker', price: 3499, category: 'footwear', image: '/image/snicker.jpg', discount: 22, description: 'An everyday sneaker with a simple profile and a comfortable, flexible feel.', stock: 12, sku: 'KLT-FT-015' },
 ];
 
-export const categories = [...new Set(products.map((product) => product.category))];
+export const products = seedProducts;
+export const categories = [...new Set(seedProducts.map((product) => product.category))];
 
-export function discountedPrice(product: Product) {
-  return Number((product.price * (1 - product.discount / 100)).toFixed(2));
+export function sellingPrice(price: number, discount: number) {
+  return Number((price * (1 - discount / 100)).toFixed(2));
+}
+
+export function discountedPrice(product: Pick<Product, 'price' | 'discount' | 'mrp'>) {
+  return sellingPrice(product.price, product.discount);
 }

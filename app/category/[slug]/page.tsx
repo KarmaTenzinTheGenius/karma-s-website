@@ -1,11 +1,9 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { ProductBrowser } from '@/components/product-browser';
-import { categories, products } from '@/lib/products';
+import { getStoreCategories, getStoreProducts } from '@/lib/catalog';
 
-export function generateStaticParams() {
-  return categories.map((slug) => ({ slug }));
-}
+export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
@@ -16,7 +14,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 export default async function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const category = slug.toLowerCase();
+  const [products, categories] = await Promise.all([getStoreProducts(), getStoreCategories()]);
   const visible = products.filter((product) => product.category === category);
-  if (!visible.length) notFound();
-  return <section className="page-wrap catalog-page"><ProductBrowser products={visible} category={category} /></section>;
+  if (!categories.includes(category)) notFound();
+  return <section className="page-wrap catalog-page"><ProductBrowser products={visible} categories={categories} category={category} /></section>;
 }

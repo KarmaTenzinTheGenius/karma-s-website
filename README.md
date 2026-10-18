@@ -1,47 +1,67 @@
 # Karma Lokdruel Tshongley
 
-Next.js App Router storefront deployed on Vercel. The original 15 products, prices and discounts are retained in `src/lib/products.ts`; product images are served from `public/image`.
+This repository is a Next.js App Router storefront for Vercel, not a Vite/Express application. It uses Prisma with PostgreSQL for persistent product, category, variant, stock, order, customer, and store-setting data. Product images uploaded in the admin area are stored in Vercel Blob.
 
-## Local development
+## Local setup
 
-```bash
+Requirements: Node.js supported by the installed Next.js version, a PostgreSQL database, and a Vercel Blob store for product image uploads.
+
+```powershell
+if (-not (Test-Path .env)) { Copy-Item .env.example .env }
 npm install
+npx prisma validate
+npm run db:generate
+npm run db:migrate
+npm run db:seed
 npm run dev
 ```
 
-Open `http://localhost:3000`. Visitors are directed to the account page to sign in or create an account before browsing the store. To access the development server at `http://192.168.56.1:3000`, that host is allowlisted in `next.config.mjs`; restart the dev server after changing its configuration. Customer accounts require a configured PostgreSQL database (`DATABASE_URL`).
+Open `http://localhost:3000`. Enter the following server-only settings in `.env` before running migrations or signing in:
 
-Set `SESSION_SECRET` to a random secret of at least 32 characters and `ADMIN_PASSWORD` to a unique password of at least 12 characters in `.env`. The password-protected admin dashboard is available at `/admin`. Do not expose these secrets in browser-facing `NEXT_PUBLIC_` variables.
+- `DATABASE_URL`: PostgreSQL connection URL.
+- `SESSION_SECRET`: random secret with at least 32 characters.
+- `ADMIN_PASSWORD`: unique admin password with at least 12 characters.
+- `BLOB_READ_WRITE_TOKEN`: token for the Vercel Blob store used for product images.
 
-## Verification
+Never prefix these values with `NEXT_PUBLIC_`. The admin dashboard is at `/admin`. Image uploads accept JPG, PNG, WebP, and GIF up to 4 MB each, with up to 8 images per product. An administrator can select a primary image and set product publication status, product details, and individual size/colour stock.
 
-```bash
-npm run build
-npm audit
-```
+`prisma/migrations/20261018100000_product_inventory_management/migration.sql` adds the product lifecycle, categories, image records, variants, stock movements, settings, and database constraints. It preserves existing product rows and creates category records for their existing category values. `npm run db:seed` adds the original sample catalogue only when its product IDs do not exist; it does not overwrite existing products or admin edits.
 
-Prisma schema checks and generation:
+## Admin and inventory behavior
 
-```bash
+- Product writes, category writes, image uploads, settings, customer lists, and order status changes require the signed admin session and server-side authorization.
+- Public product pages, category pages, search suggestions, and wishlist data read active products from PostgreSQL at request time. Draft, archived, and unpublished products are excluded.
+- Product stock is stored on the product for simple items and as individual variant rows for size/colour products. The product stock total is maintained alongside variant stock.
+- Checkout re-reads prices and publication status from PostgreSQL. Stock decrements are guarded by database updates inside the order transaction, so simultaneous orders cannot oversell the same product or variant.
+- Cancelling/refunding an eligible order restores stock once and records stock movements. Status changes follow a limited forward transition map.
+- Existing browser cart and wishlist contents remain browser-local, but those values are treated as untrusted snapshots: checkout validates product, variant, price, and stock against the database.
+
+## Validation
+
+```powershell
 npx prisma validate
 npm run db:generate
+npm run build
 ```
 
-Set a real `DATABASE_URL` before running migrations with `npm run db:migrate`. The schema is a launch foundation; the current demo API handlers still use temporary in-memory state and are not connected to Prisma.
+Apply migrations to the same database URL used by the running application. Migrations are not run automatically by each Vercel build.
 
-## Vercel
+## Vercel deployment
 
-Import the repository with the project root as the Vercel root. Vercel should detect Next.js automatically; no Express rewrite is used. Set environment variables in the Vercel project settings, then deploy. `NEXT_PUBLIC_GA_ID` and `NEXT_PUBLIC_META_PIXEL_ID` are optional analytics placeholders.
+1. Create/configure the PostgreSQL database and a Vercel Blob store.
+2. Add `DATABASE_URL`, `SESSION_SECRET`, `ADMIN_PASSWORD`, and `BLOB_READ_WRITE_TOKEN` as server-side Vercel project environment variables for the required deployment environments.
+3. From a trusted PowerShell session configured with the production database URL, run `npm run db:migrate`; run `npm run db:seed` once if the sample products should be imported.
+4. Deploy the project using Vercel's Next.js detection. The build script generates Prisma Client and builds the Next.js app; it does not modify the database.
+5. Open `/admin` on the deployed site and verify admin sign-in and a small image upload before enabling product operations.
 
-## Preview limitations before accepting real orders
+Blob URLs are allowed by the Next.js image configuration only for Vercel's public Blob hostname. Storage limits, retention, and pricing depend on the selected Vercel plan and can change; confirm current limits in the provider dashboard.
 
-- Order, review, newsletter and contact records are held in process memory and can disappear on restart or between serverless invocations.
-- Checkout is a demonstration only. UPI, cards, wallets, NetBanking and COD do not collect payment or dispatch products. Add and verify Razorpay/Cashfree server-side payment orders and webhook signatures before enabling payment.
-- Customer accounts use the Prisma `User` table with scrypt-hashed passwords and signed, HTTP-only sessions. Configure `DATABASE_URL` and apply the included initial migration with `npm run db:migrate` before enabling registration.
-- The admin dashboard uses the server-only `ADMIN_PASSWORD` setting and a signed, HTTP-only session. Demo orders remain in-memory and are not durable.
-- The contact form stores a temporary preview message. Configure an email provider and the real customer-care address/WhatsApp business number before launch.
-- The initial migration creates the Prisma schema, but only customer accounts currently use the database. Seed the preserved product data and move orders, coupons, reviews, inventory, newsletter and contact records to persistent storage.
-- Prices remain in the existing catalog's USD display format. Confirm the business currency, GST treatment, legal policies, shipping rates, return eligibility and GSTIN before launch in India.
-- Email templates are prepared in `src/lib/email-templates.ts`, but no delivery provider or abandoned-cart scheduler is connected.
+## Production limitations
 
-The active storefront and API routes are in the Next.js `app/` directory. Product data lives in `src/lib/products.ts` and active image assets live in `public/image`.
+- This implementation has not been connected to or tested against the live site, a production database, or a Vercel project from this workspace. Deployment requires valid provider accounts and environment variables.
+- Checkout is still a demonstration flow: mBoB, cards, wallets, and COD do not collect or reconcile payments. Verify payment and refund state manually or add a payment provider with signed webhooks before accepting real orders.
+- Reviews, newsletter subscriptions, and contact messages still use their existing non-product storage paths and are not made durable by the product-management migration.
+- Admin settings currently persist the store name/description, support email, and low-stock threshold. Payment credentials, tax rules, legal policies, delivery rates, and email delivery remain separate setup work.
+- Confirm the business currency, tax treatment, shipping rates, return eligibility, and local legal requirements before launch.
+
+The main storefront and APIs are under `app/`; shared UI and server utilities are under `src/`. The original sample product data remains in `src/lib/products.ts` as a seed source, and its static images remain in `public/image`.

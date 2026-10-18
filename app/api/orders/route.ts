@@ -1,6 +1,7 @@
 import { randomInt } from 'node:crypto';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { sellingPrice } from '@/lib/products';
 import { getAdminSession, getCustomerSession } from '@/lib/auth-server';
 import {
   FREE_SHIPPING_THRESHOLD,
@@ -20,7 +21,7 @@ function generateOrderNumber() {
   return `KLT-${suffix}`;
 }
 
-type IncomingItem = { id?: unknown; quantity?: unknown };
+type IncomingItem = { id?: unknown; quantity?: unknown; variantId?: unknown };
 
 export async function POST(request: Request) {
   const session = await getCustomerSession();
@@ -46,9 +47,12 @@ export async function POST(request: Request) {
 
   try {
     const productIds = rawItems.map((item) => Number(item.id)).filter((id) => Number.isInteger(id));
-    const dbProducts = await prisma.product.findMany({ where: { id: { in: productIds }, isActive: true } });
+    const dbProducts = await prisma.product.findMany({
+      where: { id: { in: productIds }, isActive: true, status: 'ACTIVE' },
+      include: { variants: { where: { isActive: true } } },
+    });
 
-    const lines: { productId: number; name: string; sku: string; quantity: number; unitPrice: number }[] = [];
+    const lines: { productId: number; variantId: string | null; size: string | null; colorName: string | null; name: string; sku: string; quantity: number; unitPrice: number }[] = [];
     for (const item of rawItems) {
       const id = Number(item.id);
       const quantity = Number(item.quantity);
@@ -56,14 +60,30 @@ export async function POST(request: Request) {
       if (!product) {
         return NextResponse.json({ success: false, message: 'One or more items are no longer available.' }, { status: 400 });
       }
-      if (!Number.isInteger(quantity) || quantity < 1 || quantity > product.stock) {
+      const variant = typeof item.variantId === 'string'
+        ? product.variants.find((entry) => entry.id === item.variantId)
+        : null;
+      if ((product.variants.length || item.variantId !== undefined && item.variantId !== null) && !variant) {
+        return NextResponse.json({ success: false, message: `Choose an available size or colour for ${product.name}.` }, { status: 400 });
+      }
+      const currentStock = variant?.stock ?? product.stock;
+      if (!Number.isInteger(quantity) || quantity < 1 || quantity > currentStock) {
         return NextResponse.json(
-          { success: false, message: `${product.name} is only available in a quantity of ${product.stock}.` },
+          { success: false, message: `${product.name} is only available in a quantity of ${currentStock}.` },
           { status: 400 },
         );
       }
-      const unitPrice = roundMoney(Number(product.price) * (1 - product.discount / 100));
-      lines.push({ productId: product.id, name: product.name, sku: product.sku, quantity, unitPrice });
+      const unitPrice = roundMoney(sellingPrice(Number(product.price), product.discount));
+      lines.push({
+        productId: product.id,
+        variantId: variant?.id ?? null,
+        size: variant?.size ?? null,
+        colorName: variant?.colorName ?? null,
+        name: product.name,
+        sku: variant?.sku ?? product.sku,
+        quantity,
+        unitPrice,
+      });
     }
 
     const subtotal = roundMoney(lines.reduce((sum, line) => sum + line.unitPrice * line.quantity, 0));
@@ -100,8 +120,20 @@ export async function POST(request: Request) {
 
     const order = await prisma.$transaction(async (tx) => {
       for (const line of lines) {
+        if (line.variantId) {
+          const variantUpdate = await tx.productVariant.updateMany({
+            where: { id: line.variantId, productId: line.productId, isActive: true, stock: { gte: line.quantity } },
+            data: { stock: { decrement: line.quantity } },
+          });
+          if (!variantUpdate.count) throw new Error(`Insufficient stock for ${line.name}.`);
+        }
         const updated = await tx.product.updateMany({
-          where: { id: line.productId, stock: { gte: line.quantity } },
+          where: {
+            id: line.productId,
+            isActive: true,
+            status: 'ACTIVE',
+            stock: { gte: line.quantity },
+          },
           data: { stock: { decrement: line.quantity } },
         });
         if (updated.count === 0) {
@@ -128,14 +160,26 @@ export async function POST(request: Request) {
           items: {
             create: lines.map((line) => ({
               productId: line.productId,
+              variantId: line.variantId,
               name: line.name,
               sku: line.sku,
+              size: line.size,
+              colorName: line.colorName,
               quantity: line.quantity,
               unitPrice: line.unitPrice,
             })),
           },
         },
         include: { items: true },
+      });
+      await tx.stockMovement.createMany({
+        data: lines.map((line) => ({
+          productId: line.productId,
+          variantId: line.variantId,
+          change: -line.quantity,
+          reason: 'order_placed',
+          orderId: created.id,
+        })),
       });
 
       return created;

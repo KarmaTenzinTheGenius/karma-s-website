@@ -1,24 +1,19 @@
 import { PrismaClient } from '@prisma/client';
-import { products } from '../src/lib/products';
+import { seedProducts } from '../src/lib/products';
 
 const prisma = new PrismaClient();
 
 async function main() {
-  for (const product of products) {
+  for (const product of seedProducts) {
+    const categorySlug = product.category.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const category = await prisma.category.upsert({
+      where: { slug: categorySlug },
+      update: {},
+      create: { name: product.category, slug: categorySlug },
+    });
     await prisma.product.upsert({
       where: { id: product.id },
-      update: {
-        slug: product.slug,
-        sku: product.sku,
-        name: product.name,
-        description: product.description,
-        category: product.category,
-        image: product.image,
-        price: product.price,
-        discount: product.discount,
-        stock: product.stock,
-        isActive: true,
-      },
+      update: {},
       create: {
         id: product.id,
         slug: product.slug,
@@ -31,6 +26,9 @@ async function main() {
         discount: product.discount,
         stock: product.stock,
         isActive: true,
+        status: 'ACTIVE',
+        categoryId: category.id,
+        images: { create: { url: product.image, isPrimary: true, sortOrder: 0 } },
       },
     });
   }

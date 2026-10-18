@@ -1,21 +1,20 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { ProductDetail } from '@/components/product-detail';
-import { discountedPrice, products } from '@/lib/products';
+import { discountedPrice } from '@/lib/products';
+import { getStoreProductBySlug, getStoreProducts } from '@/lib/catalog';
 
-export function generateStaticParams() {
-  return products.map((product) => ({ slug: product.slug }));
-}
+export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
-  const product = products.find((item) => item.slug === slug);
+  const product = await getStoreProductBySlug(slug);
   return product ? { title: product.name, description: product.description, openGraph: { title: product.name, description: product.description, images: [product.image] } } : { title: 'Product not found' };
 }
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const product = products.find((item) => item.slug === slug);
+  const [product, products] = await Promise.all([getStoreProductBySlug(slug), getStoreProducts()]);
   if (!product) notFound();
   const related = products.filter((item) => item.category === product.category && item.id !== product.id).slice(0, 4);
   const productSchema = {

@@ -3,9 +3,10 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Heart, Moon, Search, ShoppingBag, Sun, UserRound } from 'lucide-react';
-import { products } from '@/lib/products';
 import { readCart, readWishlist } from '@/lib/client-store';
 import { toast } from 'sonner';
+
+type ProductSuggestion = { id: number; name: string; slug: string; category: string };
 
 export function StoreHeader() {
   const [cartCount, setCartCount] = useState(0);
@@ -13,6 +14,8 @@ export function StoreHeader() {
   const [query, setQuery] = useState('');
   const [focused, setFocused] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
+  const [suggestions, setSuggestions] = useState<ProductSuggestion[]>([]);
+  const [searchError, setSearchError] = useState(false);
 
   useEffect(() => {
     const syncCounts = () => {
@@ -32,9 +35,32 @@ export function StoreHeader() {
     };
   }, []);
 
-  const suggestions = query.trim()
-    ? products.filter((product) => product.name.toLowerCase().includes(query.toLowerCase())).slice(0, 4)
-    : [];
+  useEffect(() => {
+    if (!query.trim()) {
+      setSuggestions([]);
+      setSearchError(false);
+      return;
+    }
+    const controller = new AbortController();
+    const timeout = window.setTimeout(async () => {
+      try {
+        const params = new URLSearchParams({ q: query.trim(), pageSize: '4' });
+        const response = await fetch(`/api/products?${params}`, { signal: controller.signal });
+        if (!response.ok) throw new Error('Search request failed.');
+        const result = await response.json() as { data?: ProductSuggestion[] };
+        setSuggestions(result.data ?? []);
+        setSearchError(false);
+      } catch (error) {
+        if (error instanceof Error && error.name === 'AbortError') return;
+        setSuggestions([]);
+        setSearchError(true);
+      }
+    }, 180);
+    return () => {
+      window.clearTimeout(timeout);
+      controller.abort();
+    };
+  }, [query]);
 
   function toggleTheme() {
     const next = !darkMode;
@@ -61,7 +87,7 @@ export function StoreHeader() {
           <Search size={18} aria-hidden="true" />
           <input type="search" name="q" value={query} onChange={(event) => setQuery(event.target.value)} onFocus={() => setFocused(true)} onBlur={() => window.setTimeout(() => setFocused(false), 140)} placeholder="Search the collection" aria-label="Search products" autoComplete="off" />
           <button type="submit">Search</button>
-          {focused && suggestions.length > 0 && <div className="search-suggestions" role="listbox">{suggestions.map((product) => <Link key={product.id} href={`/product/${product.slug}`} role="option"><span>{product.name}</span><small>{product.category}</small></Link>)}</div>}
+          {focused && (suggestions.length > 0 || searchError) && <div className="search-suggestions" role="listbox">{searchError ? <span>Search is temporarily unavailable.</span> : suggestions.map((product) => <Link key={product.id} href={`/product/${product.slug}`} role="option"><span>{product.name}</span><small>{product.category}</small></Link>)}</div>}
         </form>
         <nav className="header-actions" aria-label="Account and shopping">
           <details className="account-menu"><summary><UserRound size={19} /><span>Account</span></summary><div className="account-dropdown"><strong>Your account</strong><Link href="/track-order">Track an order</Link><button type="button" onClick={signOut}>Sign out</button></div></details>

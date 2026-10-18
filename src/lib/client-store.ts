@@ -5,6 +5,9 @@ export type CartLine = {
   quantity: number;
   image: string;
   discount: number;
+  variantId?: string;
+  size?: string | null;
+  colorName?: string | null;
 };
 
 const CART_KEY = 'karma-cart';
@@ -40,7 +43,7 @@ export function writeWishlist(wishlist: number[]) {
 
 export function addProductToCart(product: Omit<CartLine, 'quantity'>, quantity = 1) {
   const cart = readCart();
-  const existing = cart.find((line) => line.id === product.id);
+  const existing = cart.find((line) => line.id === product.id && line.variantId === product.variantId);
   if (existing) existing.quantity = Math.min(existing.quantity + quantity, 99);
   else cart.push({ ...product, quantity });
   writeCart(cart);
