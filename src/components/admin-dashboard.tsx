@@ -47,11 +47,68 @@ const EMPTY_DRAFT: ProductDraft = {
   image: '/image/shirt.jpg', images: [], brand: '', material: '', gender: '', tags: '', featured: false, status: 'DRAFT', variants: [],
 };
 
+const MAX_IMAGE_UPLOAD_SIZE = 4 * 1024 * 1024;
+const MAX_SOURCE_IMAGE_SIZE = 20 * 1024 * 1024;
+const MAX_IMAGE_DIMENSION = 1600;
+const SUPPORTED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif', 'image/bmp']);
+
 async function api<T>(url: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, init);
   const result = await response.json().catch(() => null) as { success?: boolean; message?: string; data?: T } | null;
   if (!response.ok || !result?.success) throw new Error(result?.message || 'The request could not be completed.');
   return result.data as T;
+}
+
+async function prepareProductImage(file: File): Promise<File> {
+  if (!SUPPORTED_IMAGE_TYPES.has(file.type)) {
+    throw new Error('Choose a JPG, PNG, WebP, GIF, AVIF, or BMP image.');
+  }
+  if (file.size < 1 || file.size > MAX_SOURCE_IMAGE_SIZE) {
+    throw new Error('Each selected image must be smaller than 20 MB.');
+  }
+  if (file.type === 'image/gif') {
+    if (file.size > MAX_IMAGE_UPLOAD_SIZE) {
+      throw new Error('Animated GIFs must be 4 MB or smaller so their animation is preserved.');
+    }
+    return file;
+  }
+
+  let bitmap: ImageBitmap;
+  try {
+    bitmap = await createImageBitmap(file);
+  } catch {
+    throw new Error(`The image "${file.name}" could not be read. Try saving it as JPG, PNG, or WebP.`);
+  }
+
+  try {
+    if (bitmap.width * bitmap.height > 60_000_000) {
+      throw new Error('This image has too many pixels to process. Resize it and try again.');
+    }
+    let scale = Math.min(1, MAX_IMAGE_DIMENSION / Math.max(bitmap.width, bitmap.height));
+    for (let attempt = 0; attempt < 6; attempt += 1) {
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+      canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+      const context = canvas.getContext('2d');
+      if (!context) throw new Error('Your browser could not prepare this image.');
+      context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+      const quality = Math.max(0.55, 0.86 - attempt * 0.07);
+      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/webp', quality));
+      if (!blob) throw new Error('Your browser could not convert this image.');
+      if (!['image/webp', 'image/png', 'image/jpeg'].includes(blob.type)) {
+        throw new Error('Your browser does not support the required image format. Try JPG or PNG.');
+      }
+      if (blob.size <= MAX_IMAGE_UPLOAD_SIZE) {
+        const extension = blob.type === 'image/jpeg' ? 'jpg' : blob.type.split('/')[1];
+        const name = `${file.name.replace(/\.[^.]+$/, '') || 'product-image'}.${extension}`;
+        return new File([blob], name, { type: blob.type, lastModified: Date.now() });
+      }
+      scale *= 0.8;
+    }
+    throw new Error(`The image "${file.name}" could not be reduced below 4 MB.`);
+  } finally {
+    bitmap.close();
+  }
 }
 
 function toDraft(product: Product): ProductDraft {
@@ -181,52 +238,54 @@ export function AdminDashboard({ signOut }: { signOut: () => void }) {
     }
   }
 
-  function uploadImages(files: FileList | null) {
+  async function uploadImages(files: FileList | null) {
     if (!files?.length) return;
     const selected = Array.from(files);
-    if (selected.some((file) => file.size > 4 * 1024 * 1024 || !['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.type))) {
-      toast.error('Choose JPG, PNG, WebP, or GIF images up to 4 MB each.');
-      return;
-    }
-    if (draft.images.length + selected.length > 8) {
+    if (uploadProgress !== null) return;
+    if (selected.length > 8 - draft.images.length) {
       toast.error('A product can have up to 8 images.');
       return;
     }
-    selected.forEach((file) => {
-      const formData = new FormData();
-      formData.append('file', file);
-      const xhr = new XMLHttpRequest();
-      xhr.open('POST', '/api/admin/uploads');
-      xhr.upload.onprogress = (event) => {
-        if (event.lengthComputable) setUploadProgress(Math.round(event.loaded / event.total * 100));
-      };
-      xhr.onload = () => {
-        let result: { success?: boolean; message?: string; data?: { url: string } };
-        try {
-          result = JSON.parse(xhr.responseText) as typeof result;
-        } catch {
-          toast.error('Image upload returned an invalid response.');
-          setUploadProgress(null);
-          return;
-        }
-        if (xhr.status < 200 || xhr.status >= 300 || !result.success || !result.data?.url) {
-          toast.error(result.message || 'Image upload failed.');
-          setUploadProgress(null);
-          return;
-        }
+    setUploadProgress(0);
+    try {
+      for (const file of selected) {
+        const preparedFile = await prepareProductImage(file);
+        const formData = new FormData();
+        formData.append('file', preparedFile);
+        const imageUrl = await new Promise<string>((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.open('POST', '/api/admin/uploads');
+          xhr.upload.onprogress = (event) => {
+            if (event.lengthComputable) setUploadProgress(Math.round(event.loaded / event.total * 100));
+          };
+          xhr.onload = () => {
+            let result: { success?: boolean; message?: string; data?: { url: string } };
+            try {
+              result = JSON.parse(xhr.responseText) as typeof result;
+            } catch {
+              reject(new Error('Image upload returned an invalid response.'));
+              return;
+            }
+            if (xhr.status < 200 || xhr.status >= 300 || !result.success || !result.data?.url) {
+              reject(new Error(result.message || 'Image upload failed.'));
+              return;
+            }
+            resolve(result.data.url);
+          };
+          xhr.onerror = () => reject(new Error('Image upload failed. Check your connection and try again.'));
+          xhr.send(formData);
+        });
         setDraft((current) => ({
           ...current,
-          images: [...current.images, result.data!.url],
-          image: current.images.length ? current.image : result.data!.url,
+          images: [...current.images, imageUrl],
+          image: current.images.length ? current.image : imageUrl,
         }));
-        setUploadProgress(null);
-      };
-      xhr.onerror = () => {
-        toast.error('Image upload failed. Check your connection and try again.');
-        setUploadProgress(null);
-      };
-      xhr.send(formData);
-    });
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Image upload failed.');
+    } finally {
+      setUploadProgress(null);
+    }
   }
 
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
@@ -354,9 +413,9 @@ function ProductForm({ draft, setDraft, editing, busy, progress, categories, onS
       <label>Publication status<select value={draft.status} onChange={(event) => update('status', event.target.value as ProductDraft['status'])}><option value="DRAFT">Draft / unpublished</option><option value="ACTIVE">Active / published</option><option value="ARCHIVED">Archived</option></select></label>
       <label className="admin-checkbox"><input type="checkbox" checked={draft.featured} onChange={(event) => update('featured', event.target.checked)} /> Feature this product</label>
     </div>
-    <fieldset className="admin-image-field"><legend>Product images (optional, up to 8; JPG/PNG/WebP/GIF, 4 MB each)</legend><p>Without image storage, products use the store’s default shirt image. Set BLOB_READ_WRITE_TOKEN to upload custom images.</p><input type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple onChange={(event) => onUpload(event.target.files)} />{progress !== null && <progress value={progress} max="100">{progress}%</progress>}<div className="admin-image-list">{draft.images.map((url) => <article key={url}><Image src={url} alt="Product image preview" width={90} height={90} /><label><input type="radio" name="primary-image" checked={draft.image === url} onChange={() => update('image', url)} /> Main image</label><button className="button button-danger" type="button" onClick={() => { const next = draft.images.filter((item) => item !== url); update('images', next); if (draft.image === url) update('image', next[0] ?? '/image/shirt.jpg'); }}>Remove</button></article>)}</div></fieldset>
+    <fieldset className="admin-image-field"><legend>Product images (optional, up to 8)</legend><p>JPG, PNG, WebP, AVIF, and BMP images are automatically resized to fit and compressed. Animated GIFs are preserved (up to 4 MB). Custom uploads require BLOB_READ_WRITE_TOKEN; without it, products use the default shirt image.</p><input type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/avif,image/bmp" multiple disabled={progress !== null} onChange={(event) => { onUpload(event.target.files); event.currentTarget.value = ''; }} />{progress !== null && <><small>Preparing or uploading image…</small><progress value={progress} max="100">{progress}%</progress></>}<div className="admin-image-list">{draft.images.map((url) => <article key={url}><Image src={url} alt="Product image preview" width={90} height={90} /><label><input type="radio" name="primary-image" checked={draft.image === url} onChange={() => update('image', url)} /> Main image</label><button className="button button-danger" type="button" onClick={() => { const next = draft.images.filter((item) => item !== url); update('images', next); if (draft.image === url) update('image', next[0] ?? '/image/shirt.jpg'); }}>Remove</button></article>)}</div></fieldset>
     <fieldset className="admin-variant-field"><legend>Size and colour inventory</legend><p>Add one row for each sellable size/colour combination. Variant stock replaces the product-level stock quantity.</p>{draft.variants.map((variant, index) => <div className="admin-variant-row" key={`${index}-${variant.sku}`}><label>Size<input list="standard-sizes" value={variant.size} onChange={(event) => update('variants', draft.variants.map((item, row) => row === index ? { ...item, size: event.target.value } : item))} /><datalist id="standard-sizes">{['XS', 'S', 'M', 'L', 'XL', 'XXL'].map((size) => <option value={size} key={size} />)}</datalist></label><label>Color name<input value={variant.colorName} onChange={(event) => update('variants', draft.variants.map((item, row) => row === index ? { ...item, colorName: event.target.value } : item))} /></label><label>Swatch<input type="color" value={variant.colorHex || '#333333'} onChange={(event) => update('variants', draft.variants.map((item, row) => row === index ? { ...item, colorHex: event.target.value } : item))} /></label><label>Variant SKU<input value={variant.sku} onChange={(event) => update('variants', draft.variants.map((item, row) => row === index ? { ...item, sku: event.target.value.toUpperCase() } : item))} /></label><label>Stock<input type="number" min="0" max="1000000" step="1" value={variant.stock} onChange={(event) => update('variants', draft.variants.map((item, row) => row === index ? { ...item, stock: Number(event.target.value) } : item))} /></label><button className="button button-danger" type="button" onClick={() => update('variants', draft.variants.filter((_, row) => row !== index))}>Remove</button></div>)}<button className="button button-outline" type="button" onClick={onAddVariant}>Add size / colour</button></fieldset>
-    <div className="admin-form-actions"><button className="button button-dark" type="submit" disabled={busy}>{busy ? 'Saving…' : editing ? 'Save product' : 'Create product'}</button><button className="button button-outline" type="button" onClick={onCancel}>Clear form</button></div>
+    <div className="admin-form-actions"><button className="button button-dark" type="submit" disabled={busy || progress !== null}>{busy ? 'Saving…' : editing ? 'Save product' : 'Create product'}</button><button className="button button-outline" type="button" onClick={onCancel} disabled={busy || progress !== null}>Clear form</button></div>
   </form>;
 }
 

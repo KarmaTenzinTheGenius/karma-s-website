@@ -23,7 +23,7 @@ Open `http://localhost:3000`. Enter the following server-only settings in `.env`
 - `ADMIN_PASSWORD`: unique admin password with at least 12 characters.
 - `BLOB_READ_WRITE_TOKEN` (optional): token for the Vercel Blob store used for custom product image uploads. Without it, products can still be created with the store's default shirt image.
 
-Never prefix these values with `NEXT_PUBLIC_`. The admin dashboard is at `/admin`. When Blob storage is configured, image uploads accept JPG, PNG, WebP, and GIF up to 4 MB each, with up to 8 images per product. An administrator can select a primary image and set product publication status, product details, and individual size/colour stock.
+Never prefix these values with `NEXT_PUBLIC_`. The admin dashboard is at `/admin`. When Blob storage is configured, image uploads accept JPG, PNG, WebP, AVIF, and BMP up to 20 MB before processing; static images are resized to a maximum 1600-pixel edge and compressed below 4 MB, while animated GIFs are preserved up to 4 MB. Products can have up to 8 images. An administrator can select a primary image and set product publication status, product details, and individual size/colour stock.
 
 `prisma/migrations/20261018100000_product_inventory_management/migration.sql` adds the product lifecycle, categories, image records, variants, stock movements, settings, and database constraints. It preserves existing product rows and creates category records for their existing category values. `npm run db:seed` adds the original sample catalogue only when its product IDs do not exist; it does not overwrite existing products or admin edits.
 
