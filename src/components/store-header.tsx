@@ -92,7 +92,7 @@ export function StoreHeader() {
         <nav className="header-actions" aria-label="Account and shopping">
           <details className="account-menu"><summary><UserRound size={19} /><span>Account</span></summary><div className="account-dropdown"><strong>Your account</strong><Link href="/track-order">Track an order</Link><button type="button" onClick={signOut}>Sign out</button></div></details>
           <Link href="/wishlist"><span className="action-icon"><Heart size={19} />{wishlistCount > 0 && <b>{wishlistCount}</b>}</span><span>Wishlist</span></Link>
-          <Link href="/cart"><span className="action-icon"><ShoppingBag size={19} />{cartCount > 0 && <b>{cartCount}</b>}</span><span>Bag</span></Link>
+          <Link href="/cart"><span className="action-icon"><ShoppingBag size={19} />{cartCount > 0 && <b>{cartCount}</b>}</span><span>Cart</span></Link>
           <button className="theme-toggle" type="button" onClick={toggleTheme} aria-label={darkMode ? 'Switch to light theme' : 'Switch to dark theme'}>{darkMode ? <Sun size={18} /> : <Moon size={18} />}</button>
         </nav>
       </div>
