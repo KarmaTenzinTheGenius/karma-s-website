@@ -16,6 +16,8 @@ button,a{-webkit-tap-highlight-color:transparent}
 .home-catalog .section-heading h2{font-family:Georgia,serif;font-size:31px;font-weight:400;margin:6px 0 0}
 .home-product-count{color:var(--muted);font-size:11px}
 .home-empty-products{padding:36px 20px;background:var(--mist);color:var(--muted);text-align:center}
+main form input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]),main form textarea,main form select{border:1px solid #a99daa;border-radius:3px}
+main form input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]):focus-visible,main form textarea:focus-visible,main form select:focus-visible{outline:2px solid var(--plum);outline-offset:1px;border-color:var(--plum)}
 .site-header{position:sticky;top:0;z-index:30;background:rgba(255,255,255,.96);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
 .header-main{height:76px;display:grid;grid-template-columns:240px minmax(220px,1fr) 250px;align-items:center;gap:34px}
 .brand{display:inline-flex;align-items:center;gap:10px;font-size:15px;font-weight:900;letter-spacing:.08em;line-height:1.12}.brand small{display:block;margin-top:4px;font-size:8px;letter-spacing:.18em;font-weight:600;color:var(--muted)}.brand-mark{display:grid;place-items:center;width:37px;height:37px;background:var(--plum);border-radius:50% 50% 50% 12px;color:#fff;font-family:Georgia,serif;font-size:22px;font-weight:400}

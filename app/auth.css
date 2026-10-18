@@ -45,7 +45,7 @@
 .admin-product-form .admin-section-heading{margin-bottom:18px}
 .admin-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
 .admin-form-grid label,.admin-settings-form label,.admin-inline-form label,.admin-filters label,.admin-image-field>input{display:grid;gap:6px;font-size:11px;font-weight:700}
-.admin-form-grid input,.admin-form-grid select,.admin-form-grid textarea,.admin-settings-form input,.admin-settings-form textarea,.admin-inline-form input,.admin-filters input,.admin-filters select,.admin-order-status select,.admin-variant-row input{width:100%;min-width:0;padding:10px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font:inherit;font-size:12px}
+.admin-form-grid input,.admin-form-grid select,.admin-form-grid textarea,.admin-settings-form input,.admin-settings-form textarea,.admin-inline-form input,.admin-filters input,.admin-filters select,.admin-order-status select,.admin-variant-row input{width:100%;min-width:0;padding:10px;border:1px solid #a99daa;border-radius:3px;background:var(--paper);color:var(--ink);font:inherit;font-size:12px}
 .admin-form-grid .admin-span{grid-column:1/-1}
 .admin-form-grid small{color:var(--muted);font-weight:400}
 .admin-checkbox{display:flex!important;align-items:center;gap:9px!important}
