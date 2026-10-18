@@ -1,18 +1,16 @@
+import { mkdir, writeFile } from 'node:fs/promises';
+import path from 'node:path';
 import { put } from '@vercel/blob';
 import { NextResponse } from 'next/server';
 import { getAdminSession } from '@/lib/auth-server';
+
+export const runtime = 'nodejs';
 
 const MAX_IMAGE_SIZE = 4 * 1024 * 1024;
 const ALLOWED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
 
 export async function POST(request: Request) {
   if (!(await getAdminSession())) return NextResponse.json({ success: false, message: 'Admin access is required.' }, { status: 403 });
-  if (!process.env.BLOB_READ_WRITE_TOKEN) {
-    return NextResponse.json({
-      success: false,
-      message: 'Custom image uploads are not configured. You can still save the product with the default image; set BLOB_READ_WRITE_TOKEN to enable uploads.',
-    }, { status: 503 });
-  }
 
   let form: FormData;
   try {
@@ -33,7 +31,24 @@ export async function POST(request: Request) {
 
   try {
     const extension = file.type.split('/')[1].replace('jpeg', 'jpg');
-    const blob = await put(`products/${crypto.randomUUID()}.${extension}`, file, {
+    const filename = `${crypto.randomUUID()}.${extension}`;
+    if (!process.env.BLOB_READ_WRITE_TOKEN && process.env.NODE_ENV === 'development' && usesLocalDatabase()) {
+      const uploadDirectory = path.join(process.cwd(), 'public', 'product-uploads');
+      await mkdir(uploadDirectory, { recursive: true });
+      await writeFile(path.join(uploadDirectory, filename), Buffer.from(await file.arrayBuffer()), { flag: 'wx' });
+      return NextResponse.json({ success: true, data: { url: `/product-uploads/${filename}` } }, { status: 201 });
+    }
+    if (!process.env.BLOB_READ_WRITE_TOKEN) {
+      const message = process.env.NODE_ENV === 'development'
+        ? 'This app is connected to a remote database. Configure BLOB_READ_WRITE_TOKEN for persistent image uploads; local file uploads are only available with a local database.'
+        : 'Custom image uploads on the deployed store require BLOB_READ_WRITE_TOKEN. Configure a Vercel Blob store to enable them.';
+      return NextResponse.json({
+        success: false,
+        message,
+      }, { status: 503 });
+    }
+
+    const blob = await put(`products/${filename}`, file, {
       access: 'public',
       addRandomSuffix: false,
       contentType: file.type,
@@ -50,4 +65,14 @@ function matchesFileSignature(type: string, bytes: Uint8Array) {
   if (type === 'image/png') return bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47;
   if (type === 'image/gif') return bytes[0] === 0x47 && bytes[1] === 0x49 && bytes[2] === 0x46;
   return type === 'image/webp' && String.fromCharCode(...bytes.slice(0, 4)) === 'RIFF' && String.fromCharCode(...bytes.slice(8, 12)) === 'WEBP';
+}
+
+function usesLocalDatabase() {
+  const connectionString = process.env.DATABASE_URL;
+  if (!connectionString) return false;
+  try {
+    return ['localhost', '127.0.0.1', '[::1]'].includes(new URL(connectionString).hostname);
+  } catch {
+    return false;
+  }
 }
