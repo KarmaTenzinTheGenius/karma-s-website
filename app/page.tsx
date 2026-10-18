@@ -11,11 +11,21 @@ export const dynamic = 'force-dynamic';
 export default async function HomePage() {
   const [products, categories] = await Promise.all([getStoreProducts(), getStoreCategories()]);
   const offers = products.filter((product) => product.discount > 0).sort((a, b) => b.discount - a.discount).slice(0, 4);
-  const newArrivals = [...products].slice(-4).reverse();
+  const newArrivals = [...products].reverse();
   const featuredProduct = products.find((product) => product.featured) ?? newArrivals[0];
 
   return (
     <>
+      <section className="page-wrap section-block home-catalog" aria-labelledby="home-catalog-heading">
+        <div className="section-heading">
+          <div><span className="eyebrow">Find your next favourite</span><h2 id="home-catalog-heading">Shop all products</h2></div>
+          <span className="home-product-count">{products.length} product{products.length === 1 ? '' : 's'}</span>
+        </div>
+        {products.length
+          ? <div className="product-grid">{products.map((product) => <ProductTile key={product.id} product={product} />)}</div>
+          : <p className="home-empty-products">New products are coming soon. Please check back shortly.</p>}
+      </section>
+
       <section className="hero page-wrap">
         <div className="hero-copy">
           <span className="eyebrow">A little something for every day</span>
@@ -35,9 +45,7 @@ export default async function HomePage() {
 
       <section className="page-wrap section-block"><div className="section-heading"><div><span className="eyebrow">Browse your way</span><h2>Shop by category</h2></div><Link className="text-link" href="/products">Explore all <ArrowRight size={16} /></Link></div><div className="category-grid">{categories.map((category, index) => <Link className={`category-tile category-tile-${index % 4}`} href={`/category/${category}`} key={category}><span className="category-index">0{index + 1}</span><span>{category}</span><ArrowRight size={17} /></Link>)}</div></section>
 
-      <section className="offers-band"><div className="page-wrap section-block"><div className="section-heading"><div><span className="eyebrow">A good time to find it</span><h2>Hot discounts</h2></div><Link className="text-link" href="/products?discounted=true">See every offer <ArrowRight size={16} /></Link></div><div className="product-grid">{offers.map((product) => <ProductTile key={product.id} product={product} />)}</div></div></section>
-
-      <section className="page-wrap section-block"><div className="section-heading"><div><span className="eyebrow">Just landed</span><h2>New to the shop</h2></div><Link className="text-link" href="/products?sort=newest">Discover more <ArrowRight size={16} /></Link></div><div className="product-grid">{newArrivals.map((product) => <ProductTile key={product.id} product={product} />)}</div></section>
+      {offers.length > 0 && <section className="offers-band"><div className="page-wrap section-block"><div className="section-heading"><div><span className="eyebrow">A good time to find it</span><h2>Hot discounts</h2></div><Link className="text-link" href="/products?discounted=true">See every offer <ArrowRight size={16} /></Link></div><div className="product-grid">{offers.map((product) => <ProductTile key={product.id} product={product} />)}</div></div></section>}
 
       <section className="story-band"><div className="page-wrap story-inner"><span className="eyebrow">A note from Karma</span><p>“The best things are the ones that find their way into your everyday.”</p><Link className="text-link" href="/about">Get to know us <ArrowRight size={16} /></Link></div></section>
     </>

@@ -8,6 +8,14 @@ a{color:inherit;text-decoration:none}
 button,input{font:inherit}
 button,a{-webkit-tap-highlight-color:transparent}
 .page-wrap{width:min(1200px,calc(100% - 48px));margin-inline:auto}
+.back-navigation{padding-top:12px}
+.back-button{display:inline-flex;align-items:center;gap:8px;min-height:36px;padding:0 12px;border:1px solid var(--line);border-radius:3px;background:var(--paper);color:var(--plum);font-size:12px;font-weight:700;cursor:pointer;transition:background .18s ease,border-color .18s ease}
+.back-button:hover{border-color:var(--plum);background:var(--mist)}
+.back-button:focus-visible{outline:2px solid var(--coral);outline-offset:2px}
+.home-catalog{padding-top:24px}
+.home-catalog .section-heading h2{font-family:Georgia,serif;font-size:31px;font-weight:400;margin:6px 0 0}
+.home-product-count{color:var(--muted);font-size:11px}
+.home-empty-products{padding:36px 20px;background:var(--mist);color:var(--muted);text-align:center}
 .site-header{position:sticky;top:0;z-index:30;background:rgba(255,255,255,.96);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
 .header-main{height:76px;display:grid;grid-template-columns:240px minmax(220px,1fr) 250px;align-items:center;gap:34px}
 .brand{display:inline-flex;align-items:center;gap:10px;font-size:15px;font-weight:900;letter-spacing:.08em;line-height:1.12}.brand small{display:block;margin-top:4px;font-size:8px;letter-spacing:.18em;font-weight:600;color:var(--muted)}.brand-mark{display:grid;place-items:center;width:37px;height:37px;background:var(--plum);border-radius:50% 50% 50% 12px;color:#fff;font-family:Georgia,serif;font-size:22px;font-weight:400}
