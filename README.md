@@ -62,3 +62,33 @@ Apply migrations to the same database URL used by the running application. Migra
 - Confirm the business currency, tax treatment, shipping rates, return eligibility, and local legal requirements before launch.
 
 The main storefront and APIs are under `app/`; shared UI and server utilities are under `src/`. The original sample product data remains in `src/lib/products.ts` as a seed source, and its static images remain in `public/image`.
+
+## Learning the admin area
+
+The admin page is a useful place to start because it shows how a page, an interactive component, and API routes work together:
+
+1. `app/admin/page.tsx` is the `/admin` route. It checks the admin session on the server and shows either the login form or the dashboard.
+2. `src/components/admin-dashboard.tsx` is the interactive dashboard. Its tabs, form fields, and filters use React state in the browser.
+3. When you save something, the dashboard sends a request to a route under `app/api/`. For example, products use `app/api/products/route.ts` to create or list products.
+4. The API route checks permissions and validates the request before using the helpers in `src/lib/` and Prisma to read or update the database.
+5. The dashboard reloads the affected data and displays a success or error message.
+
+### Admin dashboard sections
+
+- **Overview**: totals and recent orders.
+- **Products**: search, filter, add, edit, and remove products.
+- **Inventory**: product and size/colour variant stock.
+- **Categories**: create categories and publish or hide them.
+- **Orders**: review orders and update their status.
+- **Customers**: view registered customers and their order counts.
+- **Store settings**: update contact details and the low-stock warning level.
+
+### Where to look next
+
+- `app/` contains pages and API endpoints. In this Next.js App Router project, folders form URL paths; `page.tsx` renders a page and `route.ts` handles API requests.
+- `src/components/` contains reusable interface pieces. A file beginning with `'use client'` can manage browser interactions such as clicks and form input.
+- `src/lib/` contains shared helpers for authentication, products, currency, and database access.
+- `prisma/schema.prisma` describes the database tables and their relationships. The migration files apply schema changes, and `prisma/seed.ts` adds sample products.
+- `public/` contains static files such as the sample product images.
+
+To follow one change end-to-end, start at the dashboard handler, find the API route it calls, then follow the route into its `src/lib/` helper and Prisma query. For example, trace `saveProduct` in `src/components/admin-dashboard.tsx` to the product routes in `app/api/products/`.

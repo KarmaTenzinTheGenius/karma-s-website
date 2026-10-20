@@ -1,5 +1,6 @@
 'use client';
 
+// This dashboard needs browser state for tabs, forms, filters, and image uploads.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import { toast } from 'sonner';
@@ -7,6 +8,7 @@ import type { Product } from '@/lib/products';
 import { discountedPrice } from '@/lib/products';
 import { formatMoney } from '@/lib/currency';
 
+// These types describe the tabs and the data the dashboard receives from its APIs.
 type Tab = 'overview' | 'products' | 'inventory' | 'categories' | 'orders' | 'customers' | 'settings';
 type VariantDraft = { size: string; colorName: string; colorHex: string; sku: string; stock: number };
 type ProductDraft = {
@@ -32,6 +34,7 @@ type Category = { id: string; name: string; slug: string; isActive?: boolean };
 type Order = { orderId: string; email: string; status: string; paymentMethod: string; paymentStatus: string; total: number; itemCount: number; timestamp: string };
 type Customer = { id: string; name: string | null; email: string; phone: string | null; createdAt: string; _count: { orders: number } };
 
+// This list drives both the tab buttons and the section shown below them.
 const NAVIGATION: { id: Tab; label: string }[] = [
   { id: 'overview', label: 'Overview' },
   { id: 'products', label: 'Products' },
@@ -42,16 +45,19 @@ const NAVIGATION: { id: Tab; label: string }[] = [
   { id: 'settings', label: 'Store settings' },
 ];
 
+// New products start with safe, empty values until the admin fills in the form.
 const EMPTY_DRAFT: ProductDraft = {
   name: '', description: '', sku: '', category: '', subcategory: '', price: '', mrp: '', stock: '0',
   image: '/image/shirt.jpg', images: [], brand: '', material: '', gender: '', tags: '', featured: false, status: 'DRAFT', variants: [],
 };
 
+// Browser-side image limits keep uploads small enough for the server to process.
 const MAX_IMAGE_UPLOAD_SIZE = 4 * 1024 * 1024;
 const MAX_SOURCE_IMAGE_SIZE = 20 * 1024 * 1024;
 const MAX_IMAGE_DIMENSION = 1600;
 const SUPPORTED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif', 'image/bmp']);
 
+// Send an API request and turn unsuccessful responses into readable errors.
 async function api<T>(url: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, init);
   const result = await response.json().catch(() => null) as { success?: boolean; message?: string; data?: T } | null;
@@ -59,6 +65,7 @@ async function api<T>(url: string, init?: RequestInit): Promise<T> {
   return result.data as T;
 }
 
+// Validate and shrink images in the browser before sending them to the upload API.
 async function prepareProductImage(file: File): Promise<File> {
   if (!SUPPORTED_IMAGE_TYPES.has(file.type)) {
     throw new Error('Choose a JPG, PNG, WebP, GIF, AVIF, or BMP image.');
@@ -111,6 +118,7 @@ async function prepareProductImage(file: File): Promise<File> {
   }
 }
 
+// Convert a saved product into the string-based values used by editable form fields.
 function toDraft(product: Product): ProductDraft {
   return {
     name: product.name,
@@ -140,6 +148,7 @@ function toDraft(product: Product): ProductDraft {
 }
 
 export function AdminDashboard({ signOut }: { signOut: () => void }) {
+  // State stores the current tab and the data/forms displayed by that tab.
   const [tab, setTab] = useState<Tab>('overview');
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -159,6 +168,7 @@ export function AdminDashboard({ signOut }: { signOut: () => void }) {
   const [loadError, setLoadError] = useState('');
   const [categoryName, setCategoryName] = useState('');
 
+  // Load the overview's main data together so the dashboard opens promptly.
   const loadOverview = useCallback(async () => {
     const [statistics, productRows, categoryRows, orderRows] = await Promise.all([
       api<typeof summary>('/api/admin/summary'),
@@ -172,10 +182,12 @@ export function AdminDashboard({ signOut }: { signOut: () => void }) {
     setOrders(orderRows);
   }, []);
 
+  // Fetch data after the component appears and show an error if it fails.
   useEffect(() => {
     loadOverview().catch((error: unknown) => setLoadError(error instanceof Error ? error.message : 'Dashboard data could not be loaded.')).finally(() => setLoading(false));
   }, [loadOverview]);
 
+  // Apply the current search, stock, category, and sort filters to products.
   const refreshProducts = useCallback(async () => {
     const params = new URLSearchParams({ manage: 'true', pageSize: '100', sort, search });
     if (availability) params.set('availability', availability);
@@ -183,6 +195,7 @@ export function AdminDashboard({ signOut }: { signOut: () => void }) {
     setProducts(await api<Product[]>(`/api/products?${params}`));
   }, [availability, categoryFilter, search, sort]);
 
+  // Refresh product data when its filters change, and load other data as tabs open.
   useEffect(() => {
     if (tab === 'products' || tab === 'inventory') refreshProducts().catch((error: unknown) => toast.error(error instanceof Error ? error.message : 'Products could not be loaded.'));
   }, [refreshProducts, tab]);
@@ -192,8 +205,10 @@ export function AdminDashboard({ signOut }: { signOut: () => void }) {
     if (tab === 'settings') api<Record<string, string>>('/api/admin/settings').then((data) => setSettings((current) => ({ ...current, ...data }))).catch((error: unknown) => toast.error(error instanceof Error ? error.message : 'Settings could not be loaded.'));
   }, [tab]);
 
+  // Recalculate which displayed products need a low-stock warning.
   const lowStockProducts = useMemo(() => products.filter((product) => product.stock <= Number(settings.low_stock_threshold || 5)), [products, settings.low_stock_threshold]);
 
+  // Prepare an empty form for adding a new product.
   function beginCreate() {
     setEditing(null);
     setDraft(EMPTY_DRAFT);
@@ -202,6 +217,7 @@ export function AdminDashboard({ signOut }: { signOut: () => void }) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
+  // Fill the form with existing values so an admin can edit a product.
   function beginEdit(product: Product) {
     setEditing(product);
     setDraft(toDraft(product));
@@ -209,6 +225,7 @@ export function AdminDashboard({ signOut }: { signOut: () => void }) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
+  // Convert form strings into numbers, save them, then refresh the product lists.
   async function saveProduct(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setBusy(true);
@@ -238,6 +255,7 @@ export function AdminDashboard({ signOut }: { signOut: () => void }) {
     }
   }
 
+  // Upload images one at a time so progress and errors can be shown clearly.
   async function uploadImages(files: FileList | null) {
     if (!files?.length) return;
     const selected = Array.from(files);
@@ -290,6 +308,7 @@ export function AdminDashboard({ signOut }: { signOut: () => void }) {
 
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
 
+  // Ask for confirmation before permanently removing a product.
   async function deleteProduct(product: Product) {
     if (!window.confirm(`Delete “${product.name}”? This cannot be undone.`)) return;
     try {
@@ -301,6 +320,7 @@ export function AdminDashboard({ signOut }: { signOut: () => void }) {
     }
   }
 
+  // Save an order's new status and reload the order list from the server.
   async function changeOrderStatus(orderId: string, status: string) {
     try {
       await api(`/api/orders/${encodeURIComponent(orderId)}`, {
@@ -316,6 +336,7 @@ export function AdminDashboard({ signOut }: { signOut: () => void }) {
     }
   }
 
+  // Create a category, then reload categories so the new one is available.
   async function createCategory(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     try {
@@ -328,6 +349,7 @@ export function AdminDashboard({ signOut }: { signOut: () => void }) {
     }
   }
 
+  // Publish or hide a category without deleting it.
   async function toggleCategory(category: Category) {
     try {
       await api(`/api/categories/${category.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ isActive: !category.isActive }) });
@@ -338,6 +360,7 @@ export function AdminDashboard({ signOut }: { signOut: () => void }) {
     }
   }
 
+  // Save store details and the stock-warning threshold.
   async function saveSettings(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     try {
@@ -348,40 +371,51 @@ export function AdminDashboard({ signOut }: { signOut: () => void }) {
     }
   }
 
+  // Add a blank size/colour row to the product form.
   function addVariant() {
     setDraft((current) => ({ ...current, variants: [...current.variants, { size: '', colorName: '', colorHex: '#333333', sku: '', stock: 0 }] }));
   }
 
+  // Render the selected dashboard section; each tab below is one admin task.
   return (
     <section className="admin-page admin-dashboard">
       <div className="admin-heading"><div><span className="eyebrow">Restricted area</span><h1>Store administration</h1></div><form action={signOut}><button className="button button-outline" type="submit">Sign out</button></form></div>
       {loadError && <p className="admin-warning" role="alert">{loadError}</p>}
       <nav className="admin-tabs" aria-label="Admin sections">{NAVIGATION.map((item) => <button className={tab === item.id ? 'active' : ''} type="button" key={item.id} onClick={() => setTab(item.id)}>{item.label}</button>)}</nav>
       {loading ? <p className="admin-empty">Loading store data…</p> : <>
+        {/* Overview shows store totals, recent orders, and a shortcut to add products. */}
         {tab === 'overview' && <section><div className="admin-summary admin-metrics">{[
           ['Products', summary.products], ['Variants', summary.variants], ['Low stock', summary.lowStock], ['Out of stock', summary.outOfStock], ['Orders', summary.orders], ['Customers', summary.customers],
         ].map(([label, count]) => <article key={label}><span>{label}</span><strong>{count}</strong></article>)}</div><div className="admin-section-heading"><h2>Recent orders</h2><button className="text-link" type="button" onClick={() => setTab('orders')}>View orders</button></div><OrderList orders={orders.slice(0, 6)} onChangeStatus={changeOrderStatus} /><div className="admin-quick-action"><h2>Ready to update your catalogue?</h2><p>Add a new product with sizes, colours, stock and images.</p><button className="button button-dark" type="button" onClick={beginCreate}>Add product</button></div></section>}
+        {/* Products combines create/edit forms with filters and product actions. */}
         {tab === 'products' && <section>
           <div className="admin-section-heading"><div><h2>Products</h2><span>{products.length} matching product(s)</span></div><button className="button button-dark" type="button" onClick={beginCreate}>Add product</button></div>
           {formOpen && <ProductForm draft={draft} setDraft={setDraft} editing={editing} busy={busy} progress={uploadProgress} categories={categories} onSubmit={saveProduct} onUpload={uploadImages} onAddVariant={addVariant} onCancel={() => { setEditing(null); setDraft(EMPTY_DRAFT); setFormOpen(false); }} />}
           <div className="admin-filters"><label>Search<input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Product name or SKU" /></label><label>Category<select value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)}><option value="">All categories</option>{categories.map((category) => <option key={category.id} value={category.slug}>{category.name}</option>)}</select></label><label>Availability<select value={availability} onChange={(event) => setAvailability(event.target.value)}><option value="">All stock</option><option value="in-stock">In stock</option><option value="out-of-stock">Out of stock</option></select></label><label>Sort<select value={sort} onChange={(event) => setSort(event.target.value)}><option value="date">Newest</option><option value="name">Name</option><option value="price">Price</option><option value="stock">Stock</option></select></label></div>
           <ProductList products={products} lowStockThreshold={Number(settings.low_stock_threshold || 5)} onEdit={beginEdit} onDelete={deleteProduct} />
         </section>}
+        {/* Inventory summarizes product and variant quantities and flags low stock. */}
         {tab === 'inventory' && <section><div className="admin-section-heading"><div><h2>Inventory</h2><span>{lowStockProducts.length} product(s) at or below the configured warning threshold</span></div></div><div className="inventory-list">{products.map((product) => <article key={product.id}><Image src={product.image} alt="" width={58} height={58} /><div><strong>{product.name}</strong><small>{product.variants?.length ? `${product.variants.length} variants · ${product.stock} total units` : `${product.sku} · ${product.stock} units`}</small>{product.variants?.map((variant) => <small key={variant.id}>{[variant.size, variant.colorName].filter(Boolean).join(' / ')} — {variant.stock} in stock{variant.sku ? ` · ${variant.sku}` : ''}</small>)}</div><span className={product.stock === 0 ? 'inventory-out' : product.stock <= Number(settings.low_stock_threshold || 5) ? 'inventory-low' : 'inventory-good'}>{product.stock === 0 ? 'Out of stock' : product.stock <= Number(settings.low_stock_threshold || 5) ? 'Low stock' : 'In stock'}</span><button className="button button-outline" type="button" onClick={() => { setTab('products'); beginEdit(product); }}>Edit stock</button></article>)}</div></section>}
+        {/* Categories can be created and published or hidden from shoppers. */}
         {tab === 'categories' && <section><div className="admin-section-heading"><div><h2>Categories</h2><span>Categories used by products are created automatically.</span></div></div><form className="admin-inline-form" onSubmit={createCategory}><label>New category<input required maxLength={80} value={categoryName} onChange={(event) => setCategoryName(event.target.value)} placeholder="e.g. New arrivals" /></label><button className="button button-dark" type="submit">Create category</button></form><div className="admin-category-list">{categories.map((category) => <article key={category.id}><span><strong>{category.name}</strong><small>/{category.slug}</small></span><button className="button button-outline" type="button" onClick={() => toggleCategory(category)}>{category.isActive === false ? 'Publish' : 'Unpublish'}</button></article>)}</div></section>}
+        {/* Orders are displayed in a shared list with status controls. */}
         {tab === 'orders' && <section><div className="admin-section-heading"><div><h2>Orders</h2><span>Latest 100 orders</span></div></div><OrderList orders={orders} onChangeStatus={changeOrderStatus} /></section>}
+        {/* Customer records include contact details and their order counts. */}
         {tab === 'customers' && <section><div className="admin-section-heading"><div><h2>Customers</h2><span>Latest 100 accounts</span></div></div><div className="admin-customer-list">{customers.map((customer) => <article key={customer.id}><div className="admin-customer-primary"><strong>{customer.name || 'Customer'}</strong><span>{customer.email}</span></div><div className="admin-customer-contact"><span>{customer.phone || 'No phone'}</span><small>{customer._count.orders} order(s)</small></div><time>{new Date(customer.createdAt).toLocaleDateString()}</time></article>)}</div></section>}
+        {/* Store settings are loaded from and saved to the admin settings API. */}
         {tab === 'settings' && <section><div className="admin-section-heading"><div><h2>Store settings</h2><span>Contact and inventory display preferences</span></div></div><form className="admin-settings-form" onSubmit={saveSettings}><label>Store name<input maxLength={120} value={settings.store_name} onChange={(event) => setSettings({ ...settings, store_name: event.target.value })} /></label><label>Store description<textarea rows={4} maxLength={500} value={settings.store_description} onChange={(event) => setSettings({ ...settings, store_description: event.target.value })} /></label><label>Support email<input type="email" value={settings.support_email} onChange={(event) => setSettings({ ...settings, support_email: event.target.value })} /></label><label>Low-stock warning threshold<input type="number" min="0" max="100000" value={settings.low_stock_threshold} onChange={(event) => setSettings({ ...settings, low_stock_threshold: event.target.value })} /></label><button className="button button-dark" type="submit">Save settings</button></form></section>}
       </>}
     </section>
   );
 }
 
+// Show matching products and pass edit/delete actions back to the dashboard.
 function ProductList({ products, lowStockThreshold, onEdit, onDelete }: { products: Product[]; lowStockThreshold: number; onEdit: (product: Product) => void; onDelete: (product: Product) => void }) {
   if (!products.length) return <p className="admin-empty">No products match these filters. Add your first product to get started.</p>;
   return <div className="admin-product-list">{products.map((product) => <article key={product.id}><Image src={product.image} alt="" width={74} height={74} /><div className="admin-product-main"><strong>{product.name}</strong><small>{product.sku} · {product.category}</small><span>{formatMoney(discountedPrice(product))}{product.discount ? ` · ${Math.round(product.discount)}% off` : ''}</span></div><span className={`product-status status-${product.status?.toLowerCase() ?? 'active'}`}>{product.status ?? 'ACTIVE'}</span><span className={product.stock === 0 ? 'inventory-out' : product.stock <= lowStockThreshold ? 'inventory-low' : 'inventory-good'}>{product.stock} in stock</span><div className="admin-row-actions"><button className="button button-outline" type="button" onClick={() => onEdit(product)}>Edit</button><button className="button button-danger" type="button" onClick={() => onDelete(product)}>Delete</button></div></article>)}</div>;
 }
 
+// Keep the product form reusable and send changes to the dashboard via callbacks.
 function ProductForm({ draft, setDraft, editing, busy, progress, categories, onSubmit, onUpload, onAddVariant, onCancel }: {
   draft: ProductDraft;
   setDraft: React.Dispatch<React.SetStateAction<ProductDraft>>;
@@ -397,6 +431,7 @@ function ProductForm({ draft, setDraft, editing, busy, progress, categories, onS
   const update = <K extends keyof ProductDraft>(key: K, value: ProductDraft[K]) => setDraft((current) => ({ ...current, [key]: value }));
   return <form className="admin-product-form" onSubmit={onSubmit}>
     <div className="admin-section-heading"><div><h2>{editing ? `Edit ${editing.name}` : 'Add a product'}</h2><span>Product information and publication controls</span></div>{editing && <button className="button button-outline" type="button" onClick={onCancel}>Cancel edit</button>}</div>
+    {/* Basic fields describe the product; draft values update as the admin types. */}
     <div className="admin-form-grid">
       <label>Product name *<input required maxLength={120} value={draft.name} onChange={(event) => update('name', event.target.value)} /></label>
       <label>SKU *<input required maxLength={80} value={draft.sku} onChange={(event) => update('sku', event.target.value.toUpperCase())} /></label>
@@ -413,12 +448,16 @@ function ProductForm({ draft, setDraft, editing, busy, progress, categories, onS
       <label>Publication status<select value={draft.status} onChange={(event) => update('status', event.target.value as ProductDraft['status'])}><option value="DRAFT">Draft / unpublished</option><option value="ACTIVE">Active / published</option><option value="ARCHIVED">Archived</option></select></label>
       <label className="admin-checkbox"><input type="checkbox" checked={draft.featured} onChange={(event) => update('featured', event.target.checked)} /> Feature this product</label>
     </div>
+    {/* Images can be uploaded, previewed, removed, or chosen as the main image. */}
     <fieldset className="admin-image-field"><legend>Product images (optional, up to 8)</legend><p>JPG, PNG, WebP, AVIF, and BMP images are automatically resized and compressed. Animated GIFs are preserved (up to 4 MB). Images are stored in the product database; no separate image-storage token is required.</p><input type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/avif,image/bmp" multiple disabled={progress !== null} onChange={(event) => { onUpload(event.target.files); event.currentTarget.value = ''; }} />{progress !== null && <><small>Preparing or uploading image…</small><progress value={progress} max="100">{progress}%</progress></>}<div className="admin-image-list">{draft.images.map((url) => <article key={url}><Image src={url} alt="Product image preview" width={90} height={90} /><label><input type="radio" name="primary-image" checked={draft.image === url} onChange={() => update('image', url)} /> Main image</label><button className="button button-danger" type="button" onClick={() => { const next = draft.images.filter((item) => item !== url); update('images', next); if (draft.image === url) update('image', next[0] ?? '/image/shirt.jpg'); }}>Remove</button></article>)}</div></fieldset>
+    {/* Each variant is a separate size/colour combination with its own stock. */}
     <fieldset className="admin-variant-field"><legend>Size and colour inventory</legend><p>Add one row for each sellable size/colour combination. Variant stock replaces the product-level stock quantity.</p>{draft.variants.map((variant, index) => <div className="admin-variant-row" key={`${index}-${variant.sku}`}><label>Size<input list="standard-sizes" value={variant.size} onChange={(event) => update('variants', draft.variants.map((item, row) => row === index ? { ...item, size: event.target.value } : item))} /><datalist id="standard-sizes">{['XS', 'S', 'M', 'L', 'XL', 'XXL'].map((size) => <option value={size} key={size} />)}</datalist></label><label>Color name<input value={variant.colorName} onChange={(event) => update('variants', draft.variants.map((item, row) => row === index ? { ...item, colorName: event.target.value } : item))} /></label><label>Swatch<input type="color" value={variant.colorHex || '#333333'} onChange={(event) => update('variants', draft.variants.map((item, row) => row === index ? { ...item, colorHex: event.target.value } : item))} /></label><label>Variant SKU<input value={variant.sku} onChange={(event) => update('variants', draft.variants.map((item, row) => row === index ? { ...item, sku: event.target.value.toUpperCase() } : item))} /></label><label>Stock<input type="number" min="0" max="1000000" step="1" value={variant.stock} onChange={(event) => update('variants', draft.variants.map((item, row) => row === index ? { ...item, stock: Number(event.target.value) } : item))} /></label><button className="button button-danger" type="button" onClick={() => update('variants', draft.variants.filter((_, row) => row !== index))}>Remove</button></div>)}<button className="button button-outline" type="button" onClick={onAddVariant}>Add size / colour</button></fieldset>
+    {/* Save submits the form; both buttons are disabled during an upload or save. */}
     <div className="admin-form-actions"><button className="button button-dark" type="submit" disabled={busy || progress !== null}>{busy ? 'Saving…' : editing ? 'Save product' : 'Create product'}</button><button className="button button-outline" type="button" onClick={onCancel} disabled={busy || progress !== null}>Clear form</button></div>
   </form>;
 }
 
+// Reuse one order display in the overview and full orders tab.
 function OrderList({ orders, onChangeStatus }: { orders: Order[]; onChangeStatus: (id: string, status: string) => void }) {
   if (!orders.length) return <p className="admin-empty">No orders yet.</p>;
   const statuses = ['PENDING', 'CONFIRMED', 'SHIPPED', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED', 'REFUNDED'];
